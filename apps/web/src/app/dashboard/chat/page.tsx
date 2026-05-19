@@ -26,10 +26,10 @@ function CreateChatDialog({ onCreated }: { onCreated: (roomId: string) => void }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 hover:bg-indigo-500/30 transition-colors">
-          <Plus className="w-4 h-4" />
-        </button>
+      <DialogTrigger render={
+        <button className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 hover:bg-indigo-500/30 transition-colors" />
+      }>
+        <Plus className="w-4 h-4" />
       </DialogTrigger>
       <DialogContent className="glass border-white/10 max-w-md">
         <DialogHeader><DialogTitle>Start Chat</DialogTitle></DialogHeader>

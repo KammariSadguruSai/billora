@@ -44,10 +44,10 @@ function ApproveProjectDialog({ project, onSuccess }: { project: any, onSuccess:
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-500/20">
-          <CheckSquare className="w-4 h-4" /> Approve & Activate
-        </Button>
+      <DialogTrigger render={
+        <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-500/20" />
+      }>
+        <CheckSquare className="w-4 h-4" /> Approve & Activate
       </DialogTrigger>
       <DialogContent className="glass border-white/10 max-w-sm">
         <DialogHeader><DialogTitle>Approve Project</DialogTitle></DialogHeader>
