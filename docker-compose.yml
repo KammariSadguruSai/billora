@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://server:5000/api
+      - NEXT_PUBLIC_SOCKET_URL=http://server:5000
+    env_file:
+      - ./apps/web/.env
+    depends_on:
+      - server
+    networks:
+      - pm-network
+
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    env_file:
+      - ./apps/server/.env
+    networks:
+      - pm-network
+    restart: unless-stopped
+
+networks:
+  pm-network:
+    driver: bridge
