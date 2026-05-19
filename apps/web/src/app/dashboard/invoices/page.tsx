@@ -113,6 +113,9 @@ function CreateInvoiceDialog({ onSuccess }: { onSuccess: () => void }) {
   const qc = useQueryClient()
   const { register, handleSubmit, reset, watch, control } = useForm({
     defaultValues: {
+      client_id: '',
+      due_date: '',
+      notes: '',
       items: [{ description: '', quantity: 1, rate: 0, unit: 'unit' }],
       cgst_rate: 9, sgst_rate: 9, igst_rate: 0, discount_value: 0, discount_type: 'percentage'
     }
