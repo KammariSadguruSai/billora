@@ -90,10 +90,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 PM Invoice Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO enabled`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`🚀 PM Invoice Server running on port ${PORT}`);
+    console.log(`📡 Socket.IO enabled`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 module.exports = { app, server };
