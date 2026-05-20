@@ -54,6 +54,7 @@ export const projectsApi = {
   update: (id: string, data: any) => api.patch(`/projects/${id}`, data),
   delete: (id: string) => api.delete(`/projects/${id}`),
   stats: (id: string) => api.get(`/projects/${id}/stats`),
+  updateMembers: (id: string, members: any[]) => api.post(`/projects/${id}/members`, { members }),
 }
 
 // ─── Tasks ────────────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ export const paymentsApi = {
 // ─── Clients ──────────────────────────────────────────────────────────────────
 export const clientsApi = {
   list: (params?: any) => api.get('/clients', { params }),
+  listWithBudgets: () => api.get('/clients/with-budgets'),
   get: (id: string) => api.get(`/clients/${id}`),
   create: (data: any) => api.post('/clients', data),
   update: (id: string, data: any) => api.patch(`/clients/${id}`, data),
@@ -98,6 +100,7 @@ export const clientsApi = {
 export const usersApi = {
   list: (params?: any) => api.get('/users', { params }),
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
+  listMembers: () => api.get('/users/members'),
 }
 
 // ─── Files ────────────────────────────────────────────────────────────────────
@@ -141,4 +144,29 @@ export const aiApi = {
   chat: (message: string, context?: any) => api.post('/ai/chat', { message, context }),
   generateProposal: (data: any) => api.post('/ai/generate-proposal', data),
   taskSuggestions: (data: any) => api.post('/ai/task-suggestions', data),
+}
+
+// ─── HR ───────────────────────────────────────────────────────────────────────
+export const hrApi = {
+  createEmployee: (data: any) => api.post('/hr/employees', data),
+  listEmployees: (params?: any) => api.get('/hr/employees', { params }),
+  getEmployee: (id: string) => api.get(`/hr/employees/${id}`),
+  updateRole: (id: string, data: { role: string; department?: string }) =>
+    api.patch(`/hr/employees/${id}/role`, data),
+  updateSalary: (id: string, salary: number) =>
+    api.patch(`/hr/employees/${id}/salary`, { salary }),
+  updateStatus: (id: string, is_active: boolean) =>
+    api.patch(`/hr/employees/${id}/status`, { is_active }),
+  getDepartments: () => api.get('/hr/departments'),
+}
+
+// ─── Payslips ─────────────────────────────────────────────────────────────────
+export const payslipsApi = {
+  list: (params?: any) => api.get('/payslips', { params }),
+  get: (id: string) => api.get(`/payslips/${id}`),
+  create: (data: any) => api.post('/payslips', data),
+  update: (id: string, data: any) => api.patch(`/payslips/${id}`, data),
+  approve: (id: string) => api.patch(`/payslips/${id}/approve`),
+  markPaid: (id: string, data: any) => api.patch(`/payslips/${id}/mark-paid`, data),
+  delete: (id: string) => api.delete(`/payslips/${id}`),
 }

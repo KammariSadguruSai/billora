@@ -21,6 +21,8 @@ const notificationRoutes = require('./routes/notifications');
 const dashboardRoutes = require('./routes/dashboard');
 const analyticsRoutes = require('./routes/analytics');
 const aiRoutes = require('./routes/ai');
+const hrRoutes = require('./routes/hr');
+const payslipRoutes = require('./routes/payslips');
 
 const app = express();
 const server = http.createServer(app);
@@ -69,6 +71,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/hr', hrRoutes);
+app.use('/api/payslips', payslipRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

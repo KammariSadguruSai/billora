@@ -89,8 +89,8 @@ export default function SettingsPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-gray-400 text-sm mt-1">Manage your account and preferences</p>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Manage your account and preferences</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -106,20 +106,20 @@ export default function SettingsPage() {
                 <button
                   key={item.id}
                   onClick={() => setActive(item.id)}
-                  className={`flex-shrink-0 lg:w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl text-left transition-all duration-200 group
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl text-left transition-all duration-200 group cursor-pointer
                     ${isActive
-                      ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                      ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-white border border-indigo-500/20 dark:border-indigo-500/30'
+                      : 'text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-950/[0.03] dark:hover:bg-white/5 border border-transparent'}`}
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0
-                    ${isActive ? 'bg-indigo-500 text-white' : 'bg-white/5 text-gray-400 group-hover:bg-white/10 group-hover:text-white'}`}>
+                    ${isActive ? 'bg-indigo-500 text-white' : 'bg-slate-950/[0.04] dark:bg-white/5 text-slate-500 dark:text-gray-400 group-hover:bg-slate-950/[0.08] dark:group-hover:bg-white/10 group-hover:text-slate-850 dark:group-hover:text-white'}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium whitespace-nowrap">{item.label}</p>
-                    <p className="text-[10px] text-gray-500 truncate hidden lg:block">{item.desc}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-gray-500 truncate hidden lg:block">{item.desc}</p>
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-indigo-400 shrink-0 hidden lg:block" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 hidden lg:block" />}
                 </button>
               )
             })}
@@ -128,9 +128,9 @@ export default function SettingsPage() {
           {/* Sign Out — only shown on desktop sidebar */}
           <button
             onClick={logout}
-            className="hidden lg:flex w-full items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 mt-2"
+            className="hidden lg:flex w-full items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 mt-2 cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <LogOut className="w-4 h-4" />
             </div>
             <p className="text-sm font-medium">Sign Out</p>
@@ -152,11 +152,10 @@ export default function SettingsPage() {
               {active === 'profile' && (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   {/* Personal Info Card */}
-                  <div className="rounded-2xl p-6 space-y-6"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="flex items-center gap-2 pb-4 border-b border-white/8">
-                      <User className="w-4 h-4 text-indigo-400" />
-                      <h2 className="font-semibold text-white">Personal Information</h2>
+                  <div className="rounded-2xl p-6 space-y-6 bg-slate-950/[0.02] dark:bg-slate-950/20 border border-slate-950/[0.06] dark:border-white/5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 pb-4 border-b border-slate-950/[0.06] dark:border-white/10">
+                      <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <h2 className="font-semibold text-slate-900 dark:text-white">Personal Information</h2>
                     </div>
 
                     {/* Avatar Row */}
@@ -169,14 +168,14 @@ export default function SettingsPage() {
                           </AvatarFallback>
                         </Avatar>
                         <button type="button"
-                          className="absolute -bottom-1 -right-1 w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white hover:bg-indigo-400 transition-colors shadow-lg">
+                          className="absolute -bottom-1 -right-1 w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white hover:bg-indigo-400 transition-colors shadow-lg cursor-pointer">
                           <Camera className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       <div>
-                        <p className="font-bold text-white text-lg">{user?.full_name || 'Your Name'}</p>
-                        <p className="text-gray-400 text-sm">{user?.email}</p>
-                        <p className="text-gray-500 text-xs mt-1">Click the camera icon to update your photo</p>
+                        <p className="font-bold text-slate-900 dark:text-white text-lg">{user?.full_name || 'Your Name'}</p>
+                        <p className="text-slate-500 dark:text-gray-400 text-sm">{user?.email}</p>
+                        <p className="text-slate-450 dark:text-gray-500 text-xs mt-1">Click the camera icon to update your photo</p>
                       </div>
                     </div>
 
@@ -184,20 +183,20 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Field label="Full Name">
                         <Input {...register('full_name')}
-                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                          className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                       </Field>
                       <Field label="Email Address">
                         <Input value={user?.email} disabled
-                          className="bg-white/3 border-white/5 text-gray-500 cursor-not-allowed h-10 rounded-xl" />
+                          className="bg-slate-950/[0.02] dark:bg-white/3 border border-slate-950/[0.04] dark:border-white/5 text-slate-400 dark:text-gray-500 cursor-not-allowed h-10 rounded-xl" />
                       </Field>
                       <Field label="Phone Number">
                         <Input {...register('phone')} placeholder="+91 9999999999"
-                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                          className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                       </Field>
                       {user?.role !== 'admin' && (
                         <Field label="Company">
                           <Input {...register('company')} placeholder="Your Company"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                            className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                         </Field>
                       )}
                     </div>
@@ -205,31 +204,30 @@ export default function SettingsPage() {
 
                   {/* Company Details — Admin only */}
                   {user?.role === 'admin' && (
-                    <div className="rounded-2xl p-6 space-y-5"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <div className="flex items-center gap-2 pb-4 border-b border-white/8">
-                        <Building className="w-4 h-4 text-indigo-400" />
+                    <div className="rounded-2xl p-6 space-y-5 bg-slate-950/[0.02] dark:bg-slate-950/20 border border-slate-950/[0.06] dark:border-white/5 backdrop-blur-md">
+                      <div className="flex items-center gap-2 pb-4 border-b border-slate-950/[0.06] dark:border-white/10">
+                        <Building className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <div>
-                          <h2 className="font-semibold text-white">Company Details</h2>
-                          <p className="text-xs text-gray-500 mt-0.5">Shown on all generated invoices</p>
+                          <h2 className="font-semibold text-slate-900 dark:text-white">Company Details</h2>
+                          <p className="text-xs text-slate-450 dark:text-gray-550 mt-0.5">Shown on all generated invoices</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Company Name">
                           <Input {...register('company_name')} placeholder="PM Portal Services"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                            className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                         </Field>
                         <Field label="Billing Email">
                           <Input {...register('company_email')} placeholder="billing@company.com"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                            className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                         </Field>
                         <Field label="Company Address">
                           <Input {...register('company_address')} placeholder="123 Business Park, City, State"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl" />
+                            className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl" />
                         </Field>
                         <Field label="GSTIN / Tax ID">
                           <Input {...register('company_gstin')} placeholder="22AAAAA0000A1Z5"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-10 rounded-xl font-mono" />
+                            className="bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-450 dark:placeholder:text-gray-600 h-10 rounded-xl font-mono" />
                         </Field>
                       </div>
                     </div>
@@ -253,15 +251,14 @@ export default function SettingsPage() {
 
               {/* ── NOTIFICATIONS ── */}
               {active === 'notifications' && (
-                <div className="rounded-2xl p-6 space-y-6"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="flex items-center gap-2 pb-4 border-b border-white/8">
-                    <Bell className="w-4 h-4 text-indigo-400" />
-                    <h2 className="font-semibold text-white">Notification Preferences</h2>
+                <div className="rounded-2xl p-6 space-y-6 bg-slate-950/[0.02] dark:bg-slate-950/20 border border-slate-950/[0.06] dark:border-white/5 backdrop-blur-md">
+                  <div className="flex items-center gap-2 pb-4 border-b border-slate-950/[0.06] dark:border-white/10">
+                    <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <h2 className="font-semibold text-slate-900 dark:text-white">Notification Preferences</h2>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Channels</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">Channels</p>
                     {[
                       { key: 'notification_email',    label: 'Email Notifications', desc: 'Receive updates for tasks, invoices & payments', icon: Mail },
                       { key: 'notification_whatsapp', label: 'WhatsApp Alerts',     desc: 'Get critical alerts on WhatsApp (requires phone)', icon: Phone },
@@ -269,15 +266,15 @@ export default function SettingsPage() {
                       const Icon = item.icon
                       return (
                         <div key={item.key}
-                          className="flex items-center justify-between p-4 rounded-xl hover:bg-white/3 transition-colors"
-                          style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                          className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-950/[0.04] dark:hover:bg-white/5 border border-slate-950/[0.06] dark:border-white/5 transition-colors"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                              <Icon className="w-4 h-4 text-indigo-400" />
+                            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 flex items-center justify-center">
+                              <Icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{item.label}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                              <p className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</p>
+                              <p className="text-xs text-slate-450 dark:text-gray-500 mt-0.5">{item.desc}</p>
                             </div>
                           </div>
                           <Switch
@@ -290,7 +287,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Events</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">Events</p>
                     {[
                       'New task assigned to me',
                       'Invoice sent or paid',
@@ -299,11 +296,11 @@ export default function SettingsPage() {
                       'Project status change',
                     ].map(item => (
                       <div key={item}
-                        className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/3 transition-colors"
-                        style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                        className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-950/[0.04] dark:hover:bg-white/5 border border-slate-950/[0.06] dark:border-white/5 transition-colors"
+                      >
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                          <p className="text-sm text-gray-300">{item}</p>
+                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-650 dark:bg-indigo-400 shrink-0" />
+                          <p className="text-sm text-slate-700 dark:text-gray-300">{item}</p>
                         </div>
                         <Switch defaultChecked />
                       </div>
@@ -314,15 +311,14 @@ export default function SettingsPage() {
 
               {/* ── APPEARANCE ── */}
               {active === 'appearance' && (
-                <div className="rounded-2xl p-6 space-y-6"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="flex items-center gap-2 pb-4 border-b border-white/8">
-                    <Palette className="w-4 h-4 text-indigo-400" />
-                    <h2 className="font-semibold text-white">Appearance</h2>
+                <div className="rounded-2xl p-6 space-y-6 bg-slate-950/[0.02] dark:bg-slate-950/20 border border-slate-950/[0.06] dark:border-white/5 backdrop-blur-md">
+                  <div className="flex items-center gap-2 pb-4 border-b border-slate-950/[0.06] dark:border-white/10">
+                    <Palette className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <h2 className="font-semibold text-slate-900 dark:text-white">Appearance</h2>
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Theme</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-4">Theme</p>
                     <div className="grid grid-cols-3 gap-3">
                       {[
                         { id: 'dark',   label: 'Dark',   preview: 'linear-gradient(135deg, #0f1117 50%, #1e2139 100%)' },
@@ -332,11 +328,10 @@ export default function SettingsPage() {
                         <button
                           key={t.id}
                           onClick={() => setTheme(t.id)}
-                          className={`relative p-4 rounded-2xl text-sm font-medium capitalize flex flex-col items-center gap-3 transition-all duration-200
+                          className={`relative p-4 rounded-2xl text-sm font-medium capitalize flex flex-col items-center gap-3 transition-all duration-200 border cursor-pointer
                             ${theme === t.id
-                              ? 'bg-indigo-500/15 border-indigo-500 text-white shadow-lg shadow-indigo-500/10'
-                              : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-white hover:bg-white/3'}`}
-                          style={{ border: '1px solid' }}
+                              ? 'bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500 text-indigo-650 dark:text-white shadow-md dark:shadow-indigo-500/10'
+                              : 'border-slate-950/[0.06] dark:border-white/10 text-slate-500 dark:text-gray-400 hover:border-indigo-500/50 dark:hover:border-white/20 hover:text-slate-800 dark:hover:text-white hover:bg-slate-950/[0.02] dark:hover:bg-white/3'}`}
                         >
                           {theme === t.id && (
                             <span className="absolute top-2 right-2 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
@@ -351,17 +346,16 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Language & Region</p>
-                    <div className="flex items-center justify-between p-4 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-4">Language & Region</p>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/[0.02] dark:bg-white/3 border border-slate-950/[0.06] dark:border-white/5">
                       <div className="flex items-center gap-3">
-                        <Globe className="w-4 h-4 text-gray-400" />
+                        <Globe className="w-4 h-4 text-slate-450 dark:text-gray-400" />
                         <div>
-                          <p className="text-sm text-white font-medium">Language</p>
-                          <p className="text-xs text-gray-500">English (India)</p>
+                          <p className="text-sm text-slate-900 dark:text-white font-medium">Language</p>
+                          <p className="text-xs text-slate-500 dark:text-gray-500">English (India)</p>
                         </div>
                       </div>
-                      <Badge className="bg-white/5 text-gray-400 text-xs border-white/10">Default</Badge>
+                      <Badge className="bg-slate-950/[0.04] dark:bg-white/5 text-slate-500 dark:text-gray-400 text-xs border border-slate-950/[0.06] dark:border-white/10">Default</Badge>
                     </div>
                   </div>
                 </div>
@@ -370,25 +364,23 @@ export default function SettingsPage() {
               {/* ── SECURITY ── */}
               {active === 'security' && (
                 <div className="space-y-4">
-                  <div className="rounded-2xl p-6 space-y-5"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="flex items-center gap-2 pb-4 border-b border-white/8">
-                      <Lock className="w-4 h-4 text-indigo-400" />
-                      <h2 className="font-semibold text-white">Security Settings</h2>
+                  <div className="rounded-2xl p-6 space-y-5 bg-slate-950/[0.02] dark:bg-slate-950/20 border border-slate-950/[0.06] dark:border-white/5 backdrop-blur-md">
+                    <div className="flex items-center gap-2 pb-4 border-b border-slate-950/[0.06] dark:border-white/10">
+                      <Lock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <h2 className="font-semibold text-slate-900 dark:text-white">Security Settings</h2>
                     </div>
 
-                    <div className="p-5 rounded-xl flex items-start gap-4"
-                      style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                        <Lock className="w-5 h-5 text-indigo-400" />
+                    <div className="p-5 rounded-xl flex items-start gap-4 bg-indigo-500/5 dark:bg-indigo-500/[0.08] border border-indigo-500/20 dark:border-indigo-500/30">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center shrink-0">
+                        <Lock className="w-5 h-5 text-indigo-655 dark:text-indigo-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-white text-sm">Change Password</p>
-                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm">Change Password</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
                           For security, password changes are handled via email verification through Supabase Auth.
                         </p>
                         <Button size="sm" variant="outline"
-                          className="mt-3 border-indigo-500/30 text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 text-xs h-8"
+                          className="mt-3 border-indigo-500/30 text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 text-xs h-8 cursor-pointer"
                           onClick={() => toast.info('Password reset email sent!')}>
                           Send Reset Link
                         </Button>
@@ -396,19 +388,18 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Active Sessions</p>
-                      <div className="p-4 rounded-xl flex items-center justify-between"
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-3">Active Sessions</p>
+                      <div className="p-4 rounded-xl flex items-center justify-between bg-slate-950/[0.02] dark:bg-white/3 border border-slate-950/[0.06] dark:border-white/5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Shield className="w-4 h-4 text-green-400" />
+                          <div className="w-9 h-9 rounded-lg bg-green-500/10 dark:bg-green-500/15 flex items-center justify-center">
+                            <Shield className="w-4 h-4 text-green-650 dark:text-green-400" />
                           </div>
                           <div>
-                            <p className="text-sm text-white font-medium">Current Browser</p>
-                            <p className="text-xs text-gray-500">Last active: just now</p>
+                            <p className="text-sm text-slate-900 dark:text-white font-medium">Current Browser</p>
+                            <p className="text-xs text-slate-550 dark:text-gray-500">Last active: just now</p>
                           </div>
                         </div>
-                        <Badge className="bg-green-500/15 text-green-400 border-green-500/30 text-[10px] font-bold">
+                        <Badge className="bg-green-500/10 dark:bg-green-500/15 text-green-655 dark:text-green-400 border border-green-500/20 dark:border-green-500/30 text-[10px] font-bold">
                           ● ACTIVE
                         </Badge>
                       </div>
@@ -416,11 +407,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="rounded-2xl p-6"
-                    style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    <p className="text-sm font-semibold text-red-400 mb-1">Danger Zone</p>
-                    <p className="text-xs text-gray-500 mb-4">These actions cannot be undone. Please be careful.</p>
-                    <Button onClick={logout} variant="destructive" size="sm" className="gap-2 h-9 text-xs font-semibold">
+                  <div className="rounded-2xl p-6 bg-rose-500/5 dark:bg-rose-500/[0.04] border border-rose-500/10 dark:border-rose-500/20">
+                    <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-1">Danger Zone</p>
+                    <p className="text-xs text-slate-450 dark:text-gray-500 mb-4">These actions cannot be undone. Please be careful.</p>
+                    <Button onClick={logout} variant="destructive" size="sm" className="gap-2 h-9 text-xs font-semibold cursor-pointer">
                       <LogOut className="w-3.5 h-3.5" /> Sign Out of All Devices
                     </Button>
                   </div>

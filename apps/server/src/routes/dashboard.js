@@ -32,6 +32,65 @@ router.get('/', authenticate, async (req, res) => {
       });
     }
 
+    // Finance dashboard
+    if (role === 'finance') {
+      const [invoicesData, paymentsData, payslipsData, pendingPayments] = await Promise.all([
+        supabase.from('invoices').select('id, total, amount_paid, status'),
+        supabase.from('payments').select('amount, payment_date').gte('payment_date', startOfMonth),
+        supabase.from('payslips').select('id, status, net_salary'),
+        supabase.from('payments').select('*, invoice:invoices(invoice_number), client:invoices(client:clients(name))').eq('status', 'pending').limit(5),
+      ]);
+
+      const invoices = invoicesData.data || [];
+      const payslips = payslipsData.data || [];
+
+      const totalRevenue = invoices.reduce((s, i) => s + parseFloat(i.amount_paid || 0), 0);
+      const pendingRevenue = invoices.reduce((s, i) => s + parseFloat(i.total || 0) - parseFloat(i.amount_paid || 0), 0);
+      const monthlyRevenue = paymentsData.data?.reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
+
+      const payrollStats = {
+        totalDraft: payslips.filter(p => p.status === 'draft').length,
+        totalPaid: payslips.filter(p => p.status === 'paid').length,
+        monthlyPayroll: payslips.filter(p => p.status === 'paid').reduce((s, p) => s + parseFloat(p.net_salary || 0), 0),
+      };
+
+      return res.json({
+        stats: {
+          totalRevenue,
+          pendingRevenue,
+          monthlyRevenue,
+          payrollStats,
+        },
+        pendingPayments: pendingPayments.data,
+      });
+    }
+
+    // Member dashboard
+    if (role === 'member') {
+      const [tasksData, myProjects, recentPayslips] = await Promise.all([
+        supabase.from('tasks').select('id, status, priority, title').eq('assigned_to', userId),
+        supabase.from('project_members').select('project:projects(id, name, status)').eq('user_id', userId),
+        supabase.from('payslips').select('*').eq('employee_id', userId).order('created_at', { ascending: false }).limit(3),
+      ]);
+
+      const tasks = tasksData.data || [];
+      const taskStats = {
+        total: tasks.length,
+        todo: tasks.filter(t => t.status === 'todo').length,
+        in_progress: tasks.filter(t => t.status === 'in_progress').length,
+        done: tasks.filter(t => t.status === 'done').length,
+      };
+
+      return res.json({
+        stats: {
+          taskStats,
+          projectCount: myProjects.data?.length || 0,
+        },
+        recentTasks: tasks.slice(0, 5),
+        recentPayslips: recentPayslips.data,
+      });
+    }
+
     // Admin / Manager dashboard
     const [
       projectsData, tasksData, invoicesData, paymentsData,

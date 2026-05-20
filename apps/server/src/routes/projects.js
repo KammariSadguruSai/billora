@@ -185,4 +185,47 @@ router.get('/:id/stats', authenticate, async (req, res) => {
   }
 });
 
+// POST /api/projects/:id/members
+router.post('/:id/members', authenticate, isManagerOrAdmin, async (req, res) => {
+  try {
+    const { members } = req.body;
+    const { id } = req.params;
+
+    if (!Array.isArray(members)) {
+      return res.status(400).json({ error: 'Members must be an array' });
+    }
+
+    // Delete existing members
+    const { error: deleteError } = await supabase
+      .from('project_members')
+      .delete()
+      .eq('project_id', id);
+
+    if (deleteError) throw deleteError;
+
+    // Insert new members if any
+    if (members.length > 0) {
+      const insertData = members.map(m => ({
+        project_id: id,
+        user_id: m.user_id,
+        role: m.role || 'member'
+      }));
+
+      const { error: insertError } = await supabase
+        .from('project_members')
+        .insert(insertData);
+
+      if (insertError) throw insertError;
+    }
+
+    // Emit live update
+    emitToProject(id, 'project:members_updated', { id, members });
+
+    res.json({ message: 'Project members updated successfully' });
+  } catch (err) {
+    console.error('Error updating project members:', err);
+    res.status(500).json({ error: 'Failed to update project members' });
+  }
+});
+
 module.exports = router;

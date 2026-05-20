@@ -45,8 +45,27 @@ const authorize = (...roles) => {
   };
 };
 
-const isAdmin = authorize('admin');
+// ── Role helpers ──────────────────────────────────────────────────────────────
+const isAdmin          = authorize('admin');
 const isManagerOrAdmin = authorize('admin', 'manager');
-const isTeamMember = authorize('admin', 'manager', 'member');
+const isFinanceOrAdmin = authorize('admin', 'finance');
+const isTeamMember     = authorize('admin', 'manager', 'finance', 'member');
 
-module.exports = { authenticate, authorize, isAdmin, isManagerOrAdmin, isTeamMember };
+// Finance can read invoices/payments; manager can see payment status
+const canViewFinance   = authorize('admin', 'manager', 'finance');
+const canManageFinance = authorize('admin', 'finance');
+
+// Payslip access: admin full, finance create/send, member own-only (handled in route)
+const canViewPayslips  = authorize('admin', 'finance', 'member');
+
+module.exports = {
+  authenticate,
+  authorize,
+  isAdmin,
+  isManagerOrAdmin,
+  isFinanceOrAdmin,
+  isTeamMember,
+  canViewFinance,
+  canManageFinance,
+  canViewPayslips,
+};

@@ -123,7 +123,10 @@ export default function KanbanPage() {
   useEffect(() => {
     if (data?.data) {
       const grouped: Record<string, any[]> = { todo: [], in_progress: [], review: [], done: [] }
-      data.data.forEach((task: any) => {
+      const filtered = data.data.filter((task: any) => 
+        !task.tags?.includes('testing_request') && !task.tags?.includes('collaboration_request')
+      )
+      filtered.forEach((task: any) => {
         if (grouped[task.status]) grouped[task.status].push(task)
         else grouped.todo.push(task)
       })

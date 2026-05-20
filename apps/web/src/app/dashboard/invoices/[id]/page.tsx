@@ -68,7 +68,12 @@ export default function InvoiceDetailPage() {
     doc.setFont('helvetica', 'normal')
     doc.text(`Invoice Number: ${invoice.invoice_number || ''}`, 130, 22)
     doc.text(`Issue Date: ${invoice.issue_date || ''}`, 130, 28)
-    doc.text(`Due Date: ${invoice.due_date || ''}`, 130, 34)
+    if (parseFloat(invoice.amount_due) === 0 || invoice.status === 'paid') {
+      const pDate = invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Paid';
+      doc.text(`Payment Date: ${pDate}`, 130, 34)
+    } else {
+      doc.text(`Due Date: ${invoice.due_date || ''}`, 130, 34)
+    }
 
     // From (Manager Details)
     doc.setTextColor(60, 60, 60)
@@ -185,7 +190,7 @@ export default function InvoiceDetailPage() {
     <div className="space-y-8 max-w-5xl mx-auto mb-20">
       {/* Controls */}
       <div className="flex items-center justify-between">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors font-medium">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors font-medium">
           <ArrowLeft className="w-4 h-4" /> Back to Invoices
         </button>
         <div className="flex items-center gap-3">
@@ -208,8 +213,19 @@ export default function InvoiceDetailPage() {
             <p className="text-sm text-indigo-200/80">Issue Date</p>
             <p className="font-semibold">{invoice.issue_date}</p>
             <div className="pt-2">
-              <p className="text-sm text-indigo-200/80">Due Date</p>
-              <p className="font-semibold text-red-400">{invoice.due_date}</p>
+              {parseFloat(invoice.amount_due) === 0 || invoice.status === 'paid' ? (
+                <>
+                  <p className="text-sm text-indigo-200/80">Payment Date</p>
+                  <p className="font-semibold text-green-400">
+                    {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Paid'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-indigo-200/80">Due Date</p>
+                  <p className="font-semibold text-red-400">{invoice.due_date}</p>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -33,6 +33,8 @@ router.get('/', authenticate, async (req, res) => {
     if (req.user.role === 'client') {
       const { data: client } = await supabase.from('clients').select('id').eq('user_id', req.user.id).single();
       if (client) query = query.eq('client_id', client.id);
+    } else if (req.user.role === 'member') {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     if (status) query = query.eq('status', status);
@@ -64,6 +66,10 @@ router.get('/:id', authenticate, async (req, res) => {
       .single();
 
     if (error) return res.status(404).json({ error: 'Invoice not found' });
+
+    if (req.user.role === 'member') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     // Fetch Admin details to display on the invoice
     const { data: adminData } = await supabase.from('profiles').select('full_name, email, phone, company').eq('role', 'admin').limit(1).single();
@@ -102,6 +108,23 @@ router.post('/', authenticate, isManagerOrAdmin, async (req, res) => {
     const igstAmount = (taxableAmount * (igst_rate || 0)) / 100;
     const taxAmount = cgstAmount + sgstAmount + igstAmount;
     const total = taxableAmount + taxAmount;
+
+    // Validate budget constraints
+    if (client_id) {
+      // Get all projects for this client
+      const { data: clientProjects } = await supabase.from('projects').select('budget').eq('client_id', client_id);
+      const totalBudget = (clientProjects || []).reduce((sum, p) => sum + parseFloat(p.budget || 0), 0);
+      
+      // Get all existing invoices for this client
+      const { data: existingInvoices } = await supabase.from('invoices').select('total').eq('client_id', client_id).neq('status', 'cancelled');
+      const totalInvoiced = (existingInvoices || []).reduce((sum, i) => sum + parseFloat(i.total || 0), 0);
+      
+      if (totalBudget > 0 && (totalInvoiced + total) > totalBudget) {
+        return res.status(400).json({ 
+          error: `Invoice exceeds the client's remaining budget. Remaining: ₹${(totalBudget - totalInvoiced).toLocaleString()}` 
+        });
+      }
+    }
 
     const { data: invoice, error } = await supabase
       .from('invoices')

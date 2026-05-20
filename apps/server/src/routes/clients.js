@@ -19,12 +19,27 @@ router.get('/', authenticate, isManagerOrAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed to fetch clients' }); }
 });
 
+// GET /api/clients/with-budgets
+router.get('/with-budgets', authenticate, isManagerOrAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select(`
+        id, name, company, email,
+        projects(id, name, budget, status),
+        invoices(total, status)
+      `);
+    if (error) throw error;
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: 'Failed to fetch clients with budgets' }); }
+});
+
 // GET /api/clients/:id
 router.get('/:id', authenticate, isManagerOrAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('clients')
-      .select(`*, projects(id, name, status, progress), invoices(id, invoice_number, total, status)`)
+      .select(`*, projects(id, name, status, progress, budget), invoices(id, invoice_number, total, status, amount_paid)`)
       .eq('id', req.params.id).single();
     if (error) return res.status(404).json({ error: 'Client not found' });
     res.json(data);

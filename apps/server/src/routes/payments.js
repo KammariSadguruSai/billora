@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
-const { authenticate, isManagerOrAdmin } = require('../middleware/auth');
+const { authenticate, canManageFinance } = require('../middleware/auth');
 const { emitToUser } = require('../socket');
 
 // POST /api/payments
 router.post('/', authenticate, async (req, res) => {
   try {
+    if (['member', 'manager'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const { invoice_id, amount, payment_date, payment_method, transaction_id, reference_number, screenshot_url, notes } = req.body;
 
     const { data: payment, error } = await supabase
@@ -40,7 +44,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // PATCH /api/payments/:id/verify
-router.patch('/:id/verify', authenticate, isManagerOrAdmin, async (req, res) => {
+router.patch('/:id/verify', authenticate, canManageFinance, async (req, res) => {
   try {
     const { data: payment } = await supabase.from('payments').select('*').eq('id', req.params.id).single();
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
@@ -80,6 +84,10 @@ router.patch('/:id/verify', authenticate, isManagerOrAdmin, async (req, res) => 
 // GET /api/payments
 router.get('/', authenticate, async (req, res) => {
   try {
+    if (req.user.role === 'member') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const { status, invoice_id, page = 1, limit = 20 } = req.query;
     
     // If client, we need to filter invoices belonging to them

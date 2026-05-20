@@ -112,7 +112,7 @@ router.post('/login', async (req, res) => {
     console.log('DEBUG - Looking for ID:', authData.user.id);
 
     // Get profile using admin client
-    const { data: profile, error: profileError } = await supabaseAdmin
+    let { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', authData.user.id)
@@ -124,7 +124,27 @@ router.post('/login', async (req, res) => {
     console.log('Login profile found:', profile);
 
     if (!profile) {
-      return res.status(403).json({ error: 'Profile not found. Please ensure database schema is initialized.' });
+      // Auto-create missing profile (happens if public tables were wiped but auth.users remained)
+      console.log('Profile missing. Auto-creating for:', authData.user.email);
+      const fallbackRole = authData.user.user_metadata?.role || 'admin'; // Default to admin for recovery
+      
+      const { data: newProfile, error: createErr } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          email: authData.user.email,
+          full_name: authData.user.user_metadata?.full_name || authData.user.email.split('@')[0],
+          role: fallbackRole,
+          is_active: true
+        })
+        .select()
+        .single();
+        
+      if (createErr || !newProfile) {
+        return res.status(403).json({ error: 'Profile not found and could not be auto-created. Please ensure database schema is initialized.' });
+      }
+      
+      profile = newProfile;
     }
 
     if (!profile.is_active) {

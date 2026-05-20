@@ -16,13 +16,13 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
-  draft:    { label: 'Draft',    class: 'bg-gray-500/20 text-gray-400' },
-  sent:     { label: 'Sent',     class: 'bg-blue-500/20 text-blue-400' },
-  viewed:   { label: 'Viewed',   class: 'bg-purple-500/20 text-purple-400' },
-  partial:  { label: 'Partial',  class: 'bg-yellow-500/20 text-yellow-400' },
-  paid:     { label: 'Paid',     class: 'bg-green-500/20 text-green-400' },
-  overdue:  { label: 'Overdue',  class: 'bg-red-500/20 text-red-400' },
-  cancelled:{ label: 'Cancelled',class: 'bg-gray-500/20 text-gray-400' },
+  draft:     { label: 'Draft',     class: 'bg-slate-500/10 dark:bg-gray-500/20 text-slate-600 dark:text-gray-400 border border-slate-500/20 font-bold' },
+  sent:      { label: 'Sent',      class: 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold' },
+  viewed:    { label: 'Viewed',    class: 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold' },
+  partial:   { label: 'Partial',   class: 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 font-bold' },
+  paid:      { label: 'Paid',      class: 'bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/20 font-bold' },
+  overdue:   { label: 'Overdue',   class: 'bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 font-bold' },
+  cancelled: { label: 'Cancelled', class: 'bg-slate-500/10 dark:bg-gray-500/20 text-slate-600 dark:text-gray-400 border border-slate-500/20 font-bold' },
 }
 
 function downloadInvoicePDF(invoice: any) {
@@ -52,7 +52,12 @@ function downloadInvoicePDF(invoice: any) {
 
   // Invoice details (right)
   doc.text(`Issue Date: ${invoice.issue_date || ''}`, 140, 55)
-  doc.text(`Due Date: ${invoice.due_date || ''}`, 140, 62)
+  if (parseFloat(invoice.amount_due || 0) === 0 || invoice.status === 'paid') {
+    const pDate = invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Paid';
+    doc.text(`Payment Date: ${pDate}`, 140, 62)
+  } else {
+    doc.text(`Due Date: ${invoice.due_date || ''}`, 140, 62)
+  }
   doc.text(`Status: ${invoice.status?.toUpperCase()}`, 140, 69)
 
   // Items table
@@ -121,7 +126,21 @@ function CreateInvoiceDialog({ onSuccess }: { onSuccess: () => void }) {
     }
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
-  const { data: clientsData } = useQuery({ queryKey: ['clients-list'], queryFn: () => clientsApi.list({ limit: 100 }) as any })
+  
+  const { data: clientsData } = useQuery({ 
+    queryKey: ['clients-budgets'], 
+    queryFn: () => clientsApi.listWithBudgets() as any 
+  })
+
+  // Process clients
+  const clients = (clientsData || []).map((c: any) => {
+    const totalBudget = (c.projects || []).reduce((sum: number, p: any) => sum + parseFloat(p.budget || 0), 0)
+    const totalInvoiced = (c.invoices || []).reduce((sum: number, i: any) => sum + parseFloat(i.total || 0), 0)
+    return { ...c, totalBudget, availableBudget: Math.max(totalBudget - totalInvoiced, 0) }
+  }).filter((c: any) => c.availableBudget > 0)
+
+  const selectedClientId = watch('client_id')
+  const selectedClient = clients.find((c: any) => c.id === selectedClientId)
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: any) => invoicesApi.create(data) as any,
@@ -131,64 +150,88 @@ function CreateInvoiceDialog({ onSuccess }: { onSuccess: () => void }) {
 
   const watchedItems = watch('items') || []
   const subtotal = watchedItems.reduce((s: number, i: any) => s + (parseFloat(i.quantity || 0) * parseFloat(i.rate || 0)), 0)
+  
+  const cgst = watch('cgst_rate') || 0
+  const sgst = watch('sgst_rate') || 0
+  const igst = watch('igst_rate') || 0
+  const discount = watch('discount_value') || 0
+  const discountType = watch('discount_type')
+  const discountAmt = discountType === 'percentage' ? (subtotal * discount) / 100 : discount
+  const taxable = subtotal - discountAmt
+  const tax = taxable * ((cgst + sgst + igst) / 100)
+  const total = taxable + tax
+
+  const isOverBudget = selectedClient && total > selectedClient.availableBudget
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="gradient-brand border-0 text-white gap-2" />}>
+      <DialogTrigger render={<Button className="gradient-brand border-0 text-white gap-2 font-bold" />}>
         <Plus className="w-4 h-4" /> New Invoice
       </DialogTrigger>
-      <DialogContent className="glass border-white/10 max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Create Invoice</DialogTitle></DialogHeader>
+      <DialogContent className="glass border-slate-950/[0.06] dark:border-white/10 bg-white dark:bg-card max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-2xl">
+        <DialogHeader><DialogTitle className="text-lg font-extrabold text-foreground">Create Invoice</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(d => mutate(d))} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-gray-300 mb-1.5 block">Client *</label>
-              <select {...register('client_id', { required: true })} className="w-full rounded-lg bg-white/5 border border-white/10 text-sm px-3 py-2 text-gray-200">
-                <option value="">Select client...</option>
-                {(clientsData?.data || []).map((c: any) => <option key={c.id} value={c.id}>{c.name} – {c.company || c.email}</option>)}
+              <label className="text-sm text-slate-700 dark:text-gray-300 mb-1.5 block font-bold">Client *</label>
+              <select {...register('client_id', { required: true })} className="w-full rounded-lg bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-sm px-3 py-2 text-foreground font-semibold dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="" className="text-foreground dark:bg-slate-950">Select client...</option>
+                {clients.map((c: any) => <option key={c.id} value={c.id} className="text-foreground dark:bg-slate-950">{c.name} – {c.company || c.email}</option>)}
               </select>
+              {selectedClient && (
+                <div className="mt-2 text-xs font-semibold p-2 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <span className="block mb-0.5">Total Budget: ₹{selectedClient.totalBudget.toLocaleString()}</span>
+                  <span className="block">Required to Pay Now (Remaining): ₹{selectedClient.availableBudget.toLocaleString()}</span>
+                </div>
+              )}
             </div>
             <div>
-              <label className="text-sm text-gray-300 mb-1.5 block">Due Date</label>
-              <Input {...register('due_date')} type="date" className="bg-white/5 border-white/10" />
+              <label className="text-sm text-slate-700 dark:text-gray-300 mb-1.5 block font-bold">Due Date</label>
+              <Input {...register('due_date')} type="date" className="bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-foreground font-semibold" />
             </div>
           </div>
 
           {/* Items */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-gray-300">Line Items</label>
-              <Button type="button" size="sm" variant="outline" onClick={() => append({ description: '', quantity: 1, rate: 0, unit: 'unit' })}>
+              <label className="text-sm font-bold text-foreground">Line Items</label>
+              <Button type="button" size="sm" variant="outline" onClick={() => append({ description: '', quantity: 1, rate: 0, unit: 'unit' })} className="border-slate-950/15 dark:border-white/10 text-foreground bg-slate-950/[0.02] dark:bg-white/5 hover:bg-slate-950/[0.04] font-bold">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Item
               </Button>
             </div>
             <div className="space-y-2">
               {fields.map((field, i) => (
                 <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                  <Input {...register(`items.${i}.description`)} placeholder="Description" className="col-span-5 bg-white/5 border-white/10 text-sm" />
-                  <Input {...register(`items.${i}.quantity`, { valueAsNumber: true })} type="number" placeholder="Qty" className="col-span-2 bg-white/5 border-white/10 text-sm" />
-                  <Input {...register(`items.${i}.rate`, { valueAsNumber: true })} type="number" placeholder="Rate" className="col-span-3 bg-white/5 border-white/10 text-sm" />
-                  <div className="col-span-1 text-xs text-gray-400">₹{((watchedItems[i]?.quantity || 0) * (watchedItems[i]?.rate || 0)).toLocaleString()}</div>
-                  <button type="button" onClick={() => remove(i)} className="col-span-1 text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
+                  <Input {...register(`items.${i}.description`)} placeholder="Description" className="col-span-5 bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" />
+                  <Input {...register(`items.${i}.quantity`, { valueAsNumber: true })} type="number" placeholder="Qty" className="col-span-2 bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" />
+                  <Input {...register(`items.${i}.rate`, { valueAsNumber: true })} type="number" placeholder="Rate" className="col-span-3 bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" />
+                  <div className="col-span-1 text-xs text-slate-500 dark:text-gray-400 font-extrabold font-mono">₹{((watchedItems[i]?.quantity || 0) * (watchedItems[i]?.rate || 0)).toLocaleString()}</div>
+                  <button type="button" onClick={() => remove(i)} className="col-span-1 text-red-500 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Tax */}
-          <div className="grid grid-cols-3 gap-3 p-4 rounded-xl bg-white/3 border border-white/5">
-            <div><label className="text-xs text-gray-400 mb-1 block">CGST %</label><Input {...register('cgst_rate', { valueAsNumber: true })} type="number" defaultValue={9} className="bg-white/5 border-white/10 text-sm" /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">SGST %</label><Input {...register('sgst_rate', { valueAsNumber: true })} type="number" defaultValue={9} className="bg-white/5 border-white/10 text-sm" /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">IGST %</label><Input {...register('igst_rate', { valueAsNumber: true })} type="number" defaultValue={0} className="bg-white/5 border-white/10 text-sm" /></div>
-            <div className="col-span-3 pt-2 border-t border-white/5 text-sm font-semibold text-right">Subtotal: ₹{subtotal.toLocaleString()}</div>
+          <div className="grid grid-cols-3 gap-3 p-4 rounded-xl bg-slate-950/[0.02] dark:bg-white/3 border border-slate-950/[0.06] dark:border-white/5">
+            <div><label className="text-xs text-slate-500 dark:text-gray-400 mb-1 block font-bold">CGST %</label><Input {...register('cgst_rate', { valueAsNumber: true })} type="number" defaultValue={9} className="bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" /></div>
+            <div><label className="text-xs text-slate-500 dark:text-gray-400 mb-1 block font-bold">SGST %</label><Input {...register('sgst_rate', { valueAsNumber: true })} type="number" defaultValue={9} className="bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" /></div>
+            <div><label className="text-xs text-slate-500 dark:text-gray-400 mb-1 block font-bold">IGST %</label><Input {...register('igst_rate', { valueAsNumber: true })} type="number" defaultValue={0} className="bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-sm text-foreground font-semibold" /></div>
+            <div className="col-span-3 pt-2 border-t border-slate-950/[0.06] dark:border-white/5 text-sm font-extrabold text-right text-foreground font-mono">Subtotal: ₹{subtotal.toLocaleString()}</div>
           </div>
 
           <div>
-            <label className="text-sm text-gray-300 mb-1.5 block">Notes</label>
-            <textarea {...register('notes')} rows={2} placeholder="Payment terms, bank details..." className="w-full rounded-lg bg-white/5 border border-white/10 text-sm px-3 py-2 text-gray-200 placeholder-gray-500 resize-none" />
+            <label className="text-sm text-slate-700 dark:text-gray-300 mb-1.5 block font-bold">Notes</label>
+            <textarea {...register('notes')} rows={2} placeholder="Payment terms, bank details..." className="w-full rounded-lg bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-sm px-3 py-2 text-foreground font-semibold placeholder-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
 
-          <Button type="submit" disabled={isPending} className="w-full gradient-brand border-0 text-white">
+          {isOverBudget && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm font-bold text-red-600 dark:text-red-400">
+              Invoice total (₹{total.toLocaleString()}) exceeds the remaining budget (₹{selectedClient.availableBudget.toLocaleString()}).
+            </div>
+          )}
+
+          <Button type="submit" disabled={isPending || isOverBudget} className="w-full gradient-brand border-0 text-white font-bold">
             {isPending ? 'Creating...' : 'Create Invoice'}
           </Button>
         </form>
@@ -230,31 +273,31 @@ export default function InvoicesPage() {
     <div className="space-y-6 max-w-7xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Invoices</h1>
-          <p className="text-gray-400 text-sm mt-1">{data?.total || 0} invoices · ₹{totalPaid.toLocaleString()} collected · ₹{totalDue.toLocaleString()} pending</p>
+          <h1 className="text-2xl font-extrabold text-foreground">Invoices</h1>
+          <p className="text-slate-500 dark:text-gray-400 text-sm mt-1 font-semibold">{data?.total || 0} invoices · ₹{totalPaid.toLocaleString()} collected · ₹{totalDue.toLocaleString()} pending</p>
         </div>
         {['admin', 'manager'].includes(user?.role || '') && <CreateInvoiceDialog onSuccess={refetch} />}
       </div>
 
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-          <Input placeholder="Search invoices..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-white/5 border-white/10" />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500 dark:text-gray-400" />
+          <Input placeholder="Search invoices..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-slate-950/[0.01] dark:bg-white/5 border-slate-950/[0.06] dark:border-white/10 text-foreground font-semibold" />
         </div>
-        <select value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg bg-white/5 border border-white/10 text-sm px-3 py-2 text-gray-200">
-          <option value="">All Status</option>
-          {Object.keys(STATUS_MAP).map(s => <option key={s} value={s}>{STATUS_MAP[s].label}</option>)}
+        <select value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg bg-slate-950/[0.01] dark:bg-white/5 border border-slate-950/[0.06] dark:border-white/10 text-sm px-3 py-2 text-foreground font-semibold dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="" className="text-foreground dark:bg-slate-950">All Status</option>
+          {Object.keys(STATUS_MAP).map(s => <option key={s} value={s} className="text-foreground dark:bg-slate-950">{STATUS_MAP[s].label}</option>)}
         </select>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-xl animate-shimmer" />)}</div>
       ) : (
-        <div className="glass-card rounded-xl border border-border overflow-hidden">
+        <div className="glass-card bg-slate-950/[0.02] dark:bg-card/25 backdrop-blur-md border border-slate-950/[0.06] dark:border-white/10 rounded-xl overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[600px]">
-            <thead className="border-b border-border">
-              <tr className="text-left text-xs text-gray-400 uppercase tracking-wider">
+            <thead className="border-b border-slate-950/[0.06] dark:border-white/5 bg-slate-950/[0.01] dark:bg-white/[0.01]">
+              <tr className="text-left text-xs text-slate-500 dark:text-gray-400 font-extrabold uppercase tracking-wider">
                 <th className="px-4 py-3">Invoice #</th>
                 <th className="px-4 py-3">Client</th>
                 <th className="px-4 py-3 hidden md:table-cell">Date</th>
@@ -263,45 +306,51 @@ export default function InvoicesPage() {
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-slate-950/[0.06] dark:divide-white/5">
               {invoices.map((inv: any) => (
-                <motion.tr key={inv.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-indigo-400 whitespace-nowrap">{inv.invoice_number}</td>
+                <motion.tr key={inv.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-slate-950/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3 text-sm font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">{inv.invoice_number}</td>
                   <td className="px-4 py-3">
-                    <p className="text-sm font-medium whitespace-nowrap">{inv.client?.name}</p>
-                    <p className="text-xs text-gray-400 hidden sm:block">{inv.client?.company}</p>
+                    <p className="text-sm font-extrabold text-foreground whitespace-nowrap">{inv.client?.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-gray-400 font-semibold hidden sm:block">{inv.client?.company}</p>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell">
-                    <p className="whitespace-nowrap">{inv.issue_date}</p>
-                    <p className="text-xs text-red-400 whitespace-nowrap">Due: {inv.due_date}</p>
+                  <td className="px-4 py-3 text-sm text-slate-500 dark:text-gray-400 hidden md:table-cell font-semibold">
+                    <p className="whitespace-nowrap text-slate-700 dark:text-gray-300 font-bold">{inv.issue_date}</p>
+                    {parseFloat(inv.amount_due || 0) === 0 || inv.status === 'paid' ? (
+                      <p className="text-xs text-green-600 dark:text-green-400 font-extrabold whitespace-nowrap">
+                        Paid: {inv.paid_at ? new Date(inv.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Yes'}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-red-600 dark:text-red-400 font-extrabold whitespace-nowrap">Due: {inv.due_date}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm font-semibold whitespace-nowrap">₹{parseFloat(inv.total || 0).toLocaleString()}</p>
-                    {inv.amount_due > 0 && <p className="text-xs text-yellow-400 whitespace-nowrap">₹{parseFloat(inv.amount_due).toLocaleString()} due</p>}
+                    <p className="text-sm font-extrabold text-foreground whitespace-nowrap font-mono">₹{parseFloat(inv.total || 0).toLocaleString()}</p>
+                    {inv.amount_due > 0 && <p className="text-xs text-amber-600 dark:text-yellow-400 font-extrabold font-mono whitespace-nowrap">₹{parseFloat(inv.amount_due).toLocaleString()} due</p>}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <Badge className={`text-xs ${STATUS_MAP[inv.status]?.class || ''}`}>{STATUS_MAP[inv.status]?.label || inv.status}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Link href={`/dashboard/invoices/${inv.id}`}><button className="text-gray-400 hover:text-white transition-colors"><Eye className="w-4 h-4" /></button></Link>
-                      <button onClick={() => downloadInvoicePDF(inv)} className="text-gray-400 hover:text-white transition-colors"><Download className="w-4 h-4" /></button>
+                      <Link href={`/dashboard/invoices/${inv.id}`}><button className="text-slate-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white transition-colors"><Eye className="w-4 h-4" /></button></Link>
+                      <button onClick={() => downloadInvoicePDF(inv)} className="text-slate-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white transition-colors"><Download className="w-4 h-4" /></button>
                       {['admin', 'manager'].includes(user?.role || '') && ['draft', 'viewed'].includes(inv.status) && (
-                        <button onClick={() => sendMutation.mutate(inv.id)} className="text-gray-400 hover:text-indigo-400 transition-colors" title="Send Invoice Email"><Send className="w-4 h-4" /></button>
+                        <button onClick={() => sendMutation.mutate(inv.id)} className="text-slate-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" title="Send Invoice Email"><Send className="w-4 h-4" /></button>
                       )}
                       {['admin', 'manager'].includes(user?.role || '') && (
                         <button onClick={() => {
                           const msg = encodeURIComponent(`Hi ${inv.client?.name || ''}, your invoice ${inv.invoice_number} for ₹${inv.total} is ready. You can view and pay it through your client portal.`)
                           window.open(`https://wa.me/?text=${msg}`, '_blank')
-                        }} className="text-gray-400 hover:text-green-500 transition-colors" title="Send via WhatsApp">
+                        }} className="text-slate-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-500 transition-colors" title="Send via WhatsApp">
                           <MessageCircle className="w-4 h-4" />
                         </button>
                       )}
                       {user?.role === 'admin' && (
-                        <button onClick={() => { if(confirm('Delete this invoice?')) deleteMutation.mutate(inv.id) }} className="text-gray-400 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => { if(confirm('Delete this invoice?')) deleteMutation.mutate(inv.id) }} className="text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
                       )}
                       {user?.role === 'client' && parseFloat(inv.amount_due) > 0 && (
-                        <Button size="sm" onClick={() => toast('Redirecting to payment gateway...', { description: 'Payment integration pending.' })} className="h-7 text-[10px] px-2 gradient-brand border-0 text-white">Pay</Button>
+                        <Button size="sm" onClick={() => toast('Redirecting to payment gateway...', { description: 'Payment integration pending.' })} className="h-7 text-[10px] px-2 gradient-brand border-0 text-white font-bold">Pay</Button>
                       )}
                     </div>
                   </td>
@@ -310,7 +359,7 @@ export default function InvoicesPage() {
             </tbody>
           </table>
           </div>
-          {invoices.length === 0 && <div className="text-center py-16 text-gray-500"><FileText className="w-10 h-10 mx-auto mb-3 opacity-30" /><p>No invoices found</p></div>}
+          {invoices.length === 0 && <div className="text-center py-16 text-slate-500 dark:text-gray-500 font-semibold"><FileText className="w-10 h-10 mx-auto mb-3 opacity-30" /><p>No invoices found</p></div>}
         </div>
       )}
     </div>

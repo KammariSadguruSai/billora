@@ -13,13 +13,19 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
   avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'manager', 'member', 'client')),
+  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'manager', 'finance', 'member', 'client')),
   phone TEXT,
   company TEXT,
   timezone TEXT DEFAULT 'Asia/Kolkata',
   notification_email BOOLEAN DEFAULT true,
   notification_whatsapp BOOLEAN DEFAULT false,
   is_active BOOLEAN DEFAULT true,
+  -- HR Fields
+  employee_id TEXT UNIQUE,
+  blood_group TEXT CHECK (blood_group IN ('A+','A-','B+','B-','AB+','AB-','O+','O-')),
+  department TEXT,  -- developer, testing, r&d, finance, hr, operations, custom
+  salary DECIMAL(12,2) DEFAULT 0,  -- base salary, set by admin only
+  joining_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -497,3 +503,84 @@ CREATE TRIGGER auto_invoice_number
   FOR EACH ROW
   WHEN (NEW.invoice_number IS NULL OR NEW.invoice_number = '')
   EXECUTE FUNCTION generate_invoice_number();
+
+-- ============================================================
+-- HR — EMPLOYEE ID SEQUENCES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS employee_id_sequences (
+  role TEXT PRIMARY KEY,
+  last_number INTEGER DEFAULT 0
+);
+
+INSERT INTO employee_id_sequences (role, last_number) VALUES
+  ('admin',   0),
+  ('manager', 0),
+  ('finance', 0),
+  ('member',  0)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- PAYSLIPS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS payslips (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  employee_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  year INTEGER NOT NULL,
+  -- Earnings
+  basic_salary   DECIMAL(12,2) NOT NULL DEFAULT 0,
+  hra            DECIMAL(12,2) NOT NULL DEFAULT 0,
+  allowances     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  bonuses        DECIMAL(12,2) NOT NULL DEFAULT 0,
+  -- Deductions
+  deductions     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  pf_deduction   DECIMAL(12,2) NOT NULL DEFAULT 0,
+  tds_deduction  DECIMAL(12,2) NOT NULL DEFAULT 0,
+  -- Totals
+  gross_salary   DECIMAL(12,2) GENERATED ALWAYS AS
+    (basic_salary + hra + allowances + bonuses) STORED,
+  total_deductions DECIMAL(12,2) GENERATED ALWAYS AS
+    (deductions + pf_deduction + tds_deduction) STORED,
+  net_salary     DECIMAL(12,2) NOT NULL,
+  -- Status
+  status         TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'approved', 'paid')),
+  payment_date   DATE,
+  payment_method TEXT,
+  transaction_id TEXT,
+  notes          TEXT,
+  -- Audit
+  created_by     UUID REFERENCES profiles(id),
+  approved_by    UUID REFERENCES profiles(id),
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(employee_id, month, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_payslips_employee_id ON payslips(employee_id);
+CREATE INDEX IF NOT EXISTS idx_payslips_month_year  ON payslips(month, year);
+CREATE INDEX IF NOT EXISTS idx_payslips_status      ON payslips(status);
+
+CREATE TRIGGER update_payslips_updated_at BEFORE UPDATE ON payslips
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- HR — ATOMIC EMPLOYEE ID SEQUENCE FUNCTION
+-- ============================================================
+CREATE OR REPLACE FUNCTION increment_employee_seq(p_role TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+  next_val INTEGER;
+BEGIN
+  UPDATE employee_id_sequences
+  SET last_number = last_number + 1
+  WHERE role = p_role
+  RETURNING last_number INTO next_val;
+
+  IF next_val IS NULL THEN
+    INSERT INTO employee_id_sequences(role, last_number) VALUES (p_role, 1)
+    RETURNING last_number INTO next_val;
+  END IF;
+
+  RETURN next_val;
+END;
+$$ LANGUAGE plpgsql;

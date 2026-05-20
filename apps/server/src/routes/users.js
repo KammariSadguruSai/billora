@@ -19,6 +19,54 @@ router.get('/', authenticate, isAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Failed to fetch users' }); }
 });
 
+// GET /api/users/members
+router.get('/members', authenticate, async (req, res) => {
+  try {
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, avatar_url, role, is_active')
+      .neq('role', 'client')
+      .eq('is_active', true)
+      .order('full_name', { ascending: true });
+
+    if (profilesError) throw profilesError;
+
+    const { data: activeTasks, error: tasksError } = await supabase
+      .from('tasks')
+      .select('id, assigned_to')
+      .not('status', 'eq', 'done');
+
+    if (tasksError) throw tasksError;
+
+    const taskCounts = {};
+    activeTasks.forEach(t => {
+      if (t.assigned_to) {
+        taskCounts[t.assigned_to] = (taskCounts[t.assigned_to] || 0) + 1;
+      }
+    });
+
+    const profilesWithWorkload = profiles.map(profile => {
+      const activeCount = taskCounts[profile.id] || 0;
+      let availability = 'free';
+      if (activeCount >= 3) {
+        availability = 'loaded';
+      } else if (activeCount > 0) {
+        availability = 'busy';
+      }
+      return {
+        ...profile,
+        active_tasks_count: activeCount,
+        availability
+      };
+    });
+
+    res.json({ data: profilesWithWorkload });
+  } catch (err) {
+    console.error('Error fetching members:', err);
+    res.status(500).json({ error: 'Failed to fetch members workload' });
+  }
+});
+
 // PATCH /api/users/me
 router.patch('/me', authenticate, async (req, res) => {
   try {
