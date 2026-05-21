@@ -6,7 +6,7 @@ import { useAuthStore } from '@/lib/store'
 import {
   TrendingUp, Users, FileText, CreditCard, CheckSquare,
   BarChart3, ArrowUpRight, Clock, FolderKanban, AlertCircle,
-  Sparkles, ShieldCheck, Zap, Activity, ArrowRight
+  Sparkles, ShieldCheck, Zap, Activity, ArrowRight, Building2, Receipt
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -300,6 +300,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+        {(
           <Card className="bg-slate-950/[0.02] dark:bg-card/20 backdrop-blur-md border border-slate-950/[0.06] dark:border-white/5 rounded-2xl shadow-xl">
             <CardHeader className="pb-4 border-b border-slate-950/[0.06] dark:border-white/5 px-6 pt-5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
@@ -325,6 +326,7 @@ export default function DashboardPage() {
               ))}
             </CardContent>
           </Card>
+        )}
         </div>
       </div>
     )
@@ -394,7 +396,71 @@ export default function DashboardPage() {
     )
   }
 
-  // ─── Admin / Manager View ──────────────────────────────────
+  // ─── HR View ──────────────────────────────────────────────
+  if (user?.role === 'hr') {
+    const hrStats = data?.stats || {}
+    const recentPayslips = data?.recentPayslips || []
+
+    return (
+      <div className="space-y-6 max-w-7xl relative min-h-screen pb-12 animate-fade-in-up">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+              HR Operations <span className="animate-pulse">👋</span>
+            </h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1 font-medium">
+              {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+          <StatCard icon={Users} label="Active Employees" value={hrStats.activeEmployees || 0} sub="Currently employed" color="#6366f1" href="/dashboard/team" />
+          <StatCard icon={Building2} label="Departments" value={hrStats.departments || 0} sub="Active departments" color="#f59e0b" href="/dashboard/team" />
+          <StatCard icon={Receipt} label="Monthly Payroll" value={fmt(hrStats.payrollStats?.monthlyPayroll || 0)} sub="Total paid out" color="#10b981" href="/dashboard/payslips" />
+          <StatCard icon={FileText} label="Draft Payslips" value={hrStats.payrollStats?.totalDraft || 0} sub="Pending finalization" color="#8b5cf6" href="/dashboard/payslips" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+          <Card className="bg-slate-950/[0.02] dark:bg-card/20 backdrop-blur-md border border-slate-950/[0.06] dark:border-white/5 rounded-2xl shadow-xl">
+            <CardHeader className="pb-4 border-b border-slate-950/[0.06] dark:border-white/5 px-6 pt-5 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-indigo-500" />
+                <CardTitle className="text-sm font-bold text-foreground">Recent Payslips</CardTitle>
+              </div>
+              <Link href="/dashboard/payslips" className="text-xs font-semibold text-indigo-600 hover:text-indigo-500">View all</Link>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {recentPayslips.length === 0 ? (
+                <EmptyState icon={Receipt} message="No payslips generated recently." />
+              ) : recentPayslips.map((p: any) => (
+                <div key={p.id} className="p-4 rounded-xl border border-slate-950/[0.06] dark:border-white/5 bg-slate-950/[0.01] dark:bg-white/[0.01] flex justify-between items-center group">
+                  <div>
+                    <p className="font-bold text-sm text-foreground">{p.employee?.full_name}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-extrabold font-mono">₹{p.net_salary?.toLocaleString('en-IN')}</p>
+                    <Badge variant="outline" className={`text-[10px] mt-1 uppercase ${
+                      p.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                      'bg-slate-500/10 text-slate-500 border-slate-500/20'
+                    }`}>{p.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Admin / Manager View ────────────────────────
+  const role = user?.role as string
+  if (role === 'manager') {
+    stats.totalRevenue = undefined
+    stats.pendingRevenue = undefined
+    stats.monthlyRevenue = undefined
+  }
   return (
     <div className="space-y-6 max-w-7xl relative min-h-screen pb-12 animate-fade-in-up">
       {/* Background radial overlays */}
@@ -436,8 +502,10 @@ export default function DashboardPage() {
 
       {/* Four Core Telemetry Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-        <StatCard icon={TrendingUp} label="Aggregated Revenue" value={fmt(stats.totalRevenue || 0)}
-          sub={`${fmt(stats.monthlyRevenue || 0)} current month`} color="#10b981" href="/dashboard/analytics" />
+        {user?.role !== 'manager' && (
+          <StatCard icon={TrendingUp} label="Aggregated Revenue" value={fmt(stats.totalRevenue || 0)}
+            sub={`${fmt(stats.monthlyRevenue || 0)} current month`} color="#10b981" href="/dashboard/analytics" />
+        )}
         <StatCard icon={BarChart3} label="Active Workspaces" value={stats.projectStats?.active || 0}
           sub={`${stats.projectStats?.total || 0} absolute projects`} color="#6366f1" href="/dashboard/projects" />
         <StatCard icon={CheckSquare} label="Pending Tasks"
@@ -448,7 +516,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Floating Pending Banner */}
-      {(stats.pendingRevenue || 0) > 0 && (
+      {user?.role !== 'manager' && (stats.pendingRevenue || 0) > 0 && (
         <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-500/5 dark:bg-amber-500/8 border border-amber-500/15 relative z-10 shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/25 flex items-center justify-center">
@@ -608,41 +676,43 @@ export default function DashboardPage() {
         </Card>
 
         {/* Financial Flow */}
-        <Card className="bg-slate-950/[0.02] dark:bg-card/25 backdrop-blur-md border border-slate-950/[0.06] dark:border-white/5 rounded-2xl overflow-hidden shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-3 px-6 pt-5 border-b border-slate-950/[0.06] dark:border-white/5">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <CardTitle className="text-sm sm:text-base font-bold text-foreground">Pending Payments</CardTitle>
-            </div>
-            <Link href="/dashboard/payments" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            {pendingPayments.length === 0 ? (
-              <EmptyState icon={CreditCard} message="No pending transactions recorded." />
-            ) : pendingPayments.map((p: any) => (
-              <div key={p.id} className="p-4 rounded-xl border border-slate-950/[0.06] dark:border-white/5 bg-slate-950/[0.01] dark:bg-white/[0.01] hover:bg-slate-950/[0.03] dark:hover:bg-white/[0.02] hover:border-slate-950/15 dark:hover:border-white/10 transition-all duration-300 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground truncate">{p.invoice?.invoice_number || 'Transaction Pending'}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 capitalize font-medium flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                    {p.payment_method?.replace('_', ' ')}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0 flex items-center gap-3">
-                  <div>
-                    <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">₹{parseFloat(p.amount).toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Awaiting check</p>
-                  </div>
-                  <span className="text-[10px] font-extrabold uppercase bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                    Awaiting
-                  </span>
-                </div>
+        {user?.role !== 'manager' && (
+          <Card className="bg-slate-950/[0.02] dark:bg-card/25 backdrop-blur-md border border-slate-950/[0.06] dark:border-white/5 rounded-2xl overflow-hidden shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 px-6 pt-5 border-b border-slate-950/[0.06] dark:border-white/5">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <CardTitle className="text-sm sm:text-base font-bold text-foreground">Pending Payments</CardTitle>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <Link href="/dashboard/payments" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors flex items-center gap-1">
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {pendingPayments.length === 0 ? (
+                <EmptyState icon={CreditCard} message="No pending transactions recorded." />
+              ) : pendingPayments.map((p: any) => (
+                <div key={p.id} className="p-4 rounded-xl border border-slate-950/[0.06] dark:border-white/5 bg-slate-950/[0.01] dark:bg-white/[0.01] hover:bg-slate-950/[0.03] dark:hover:bg-white/[0.02] hover:border-slate-950/15 dark:hover:border-white/10 transition-all duration-300 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">{p.invoice?.invoice_number || 'Transaction Pending'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 capitalize font-medium flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      {p.payment_method?.replace('_', ' ')}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0 flex items-center gap-3">
+                    <div>
+                      <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">₹{parseFloat(p.amount).toLocaleString('en-IN')}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Awaiting check</p>
+                    </div>
+                    <span className="text-[10px] font-extrabold uppercase bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      Awaiting
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

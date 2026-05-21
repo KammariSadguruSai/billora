@@ -16,7 +16,7 @@ const NAV_GROUPS = [
   {
     label: 'Overview',
     items: [
-      { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard',  color: '#818cf8', roles: ['admin','manager','finance','member','client'] },
+      { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard',  color: '#818cf8', roles: ['admin','manager','finance','hr','member','client'] },
       { href: '/dashboard/analytics', icon: TrendingUp,      label: 'Analytics',  color: '#34d399', roles: ['admin','manager'] },
     ]
   },
@@ -30,24 +30,24 @@ const NAV_GROUPS = [
   {
     label: 'Finance',
     items: [
-      { href: '/dashboard/invoices',  icon: FileText,   label: 'Invoices',  color: '#34d399', roles: ['admin','manager','finance','client'] },
-      { href: '/dashboard/payments',  icon: CreditCard, label: 'Payments',  color: '#60a5fa', roles: ['admin','manager','finance'] },
-      { href: '/dashboard/payslips',  icon: Receipt,    label: 'Payslips',  color: '#a78bfa', roles: ['admin','finance','member'] },
+      { href: '/dashboard/invoices',  icon: FileText,   label: 'Invoices',  color: '#34d399', roles: ['admin','finance','client'] },
+      { href: '/dashboard/payments',  icon: CreditCard, label: 'Payments',  color: '#60a5fa', roles: ['admin','finance'] },
+      { href: '/dashboard/payslips',  icon: Receipt,    label: 'Payslips',  color: '#a78bfa', roles: ['admin','finance','hr','member'] },
     ]
   },
   {
     label: 'People',
     items: [
       { href: '/dashboard/clients', icon: Building2, label: 'Clients', color: '#c084fc', roles: ['admin','manager'] },
-      { href: '/dashboard/team',    icon: Users,     label: 'Team',    color: '#f472b6', roles: ['admin','manager'] },
+      { href: '/dashboard/team',    icon: Users,     label: 'Team',    color: '#f472b6', roles: ['admin','manager','hr'] },
     ]
   },
   {
     label: 'Tools',
     items: [
-      { href: '/dashboard/chat',          icon: MessageSquare, label: 'Team Chat',    color: '#38bdf8', roles: ['admin','manager','finance','member','client'] },
+      { href: '/dashboard/chat',          icon: MessageSquare, label: 'Team Chat',    color: '#38bdf8', roles: ['admin','manager','finance','hr','member','client'] },
       { href: '/dashboard/ai',            icon: Bot,           label: 'AI Assistant', color: '#a78bfa', roles: ['admin','manager'] },
-      { href: '/dashboard/notifications', icon: Bell,          label: 'Alerts',       color: '#fb923c', roles: ['admin','manager','finance','member','client'] },
+      { href: '/dashboard/notifications', icon: Bell,          label: 'Alerts',       color: '#fb923c', roles: ['admin','manager','finance','hr','member','client'] },
     ]
   },
 ]
@@ -56,6 +56,7 @@ const ROLE_BADGE: Record<string, { label: string; darkBg: string; darkText: stri
   admin:   { label: 'Admin',   darkBg: 'rgba(239,68,68,0.12)',   darkText: '#f87171', lightBg: 'rgba(239,68,68,0.1)',   lightText: '#dc2626' },
   manager: { label: 'Manager', darkBg: 'rgba(167,139,250,0.12)', darkText: '#c084fc', lightBg: 'rgba(167,139,250,0.1)', lightText: '#7c3aed' },
   finance: { label: 'Finance', darkBg: 'rgba(52,211,153,0.12)',  darkText: '#34d399', lightBg: 'rgba(52,211,153,0.1)',  lightText: '#059669' },
+  hr:      { label: 'HR',      darkBg: 'rgba(244,114,182,0.12)', darkText: '#f472b6', lightBg: 'rgba(244,114,182,0.1)', lightText: '#db2777' },
   member:  { label: 'Member',  darkBg: 'rgba(56,189,248,0.12)',  darkText: '#38bdf8', lightBg: 'rgba(56,189,248,0.1)',  lightText: '#0284c7' },
   client:  { label: 'Client',  darkBg: 'rgba(251,191,36,0.12)',  darkText: '#fbbf24', lightBg: 'rgba(251,191,36,0.1)',  lightText: '#d97706' },
 }

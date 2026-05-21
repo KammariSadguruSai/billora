@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { BarChart3, Mail, Lock, User, Building, Eye, EyeOff } from 'lucide-react'
+import { BarChart3, Mail, Lock, User, Building, Eye, EyeOff, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -15,9 +15,9 @@ import { useAuthStore } from '@/lib/store'
 const schema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email'),
+  phone: z.string().min(10, 'WhatsApp number is required for account creation'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   company: z.string().optional(),
-  role: z.enum(['client', 'member']).default('client'),
 })
 
 export default function RegisterPage() {
@@ -28,7 +28,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      await registerUser(data)
+      await registerUser({ ...data, role: 'client' })
       toast.success('Account created! Welcome aboard!')
       router.push('/dashboard')
     } catch (err: any) {
@@ -71,6 +71,15 @@ export default function RegisterPage() {
             </div>
 
             <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">WhatsApp Number *</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <Input {...register('phone')} placeholder="+91 9876543210" className="pl-10 bg-white/5 border-white/10" />
+              </div>
+              {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message as string}</p>}
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">Company (Optional)</label>
               <div className="relative">
                 <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -88,14 +97,6 @@ export default function RegisterPage() {
                 </button>
               </div>
               {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message as string}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-2 block">I am a...</label>
-              <select {...register('role')} className="w-full rounded-lg bg-white/5 border border-white/10 text-sm px-3 py-2.5 text-gray-200">
-                <option value="client">Client (need to hire)</option>
-                <option value="member">Team Member / Freelancer</option>
-              </select>
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full gradient-brand border-0 text-white py-5 text-base">

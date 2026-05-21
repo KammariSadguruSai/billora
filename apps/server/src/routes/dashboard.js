@@ -65,6 +65,41 @@ router.get('/', authenticate, async (req, res) => {
       });
     }
 
+    // HR dashboard
+    if (role === 'hr') {
+      const [profilesData, payslipsData, recentPayslipsData] = await Promise.all([
+        supabase.from('profiles').select('id, department, is_active').neq('role', 'client'),
+        supabase.from('payslips').select('id, status, net_salary'),
+        supabase.from('payslips').select('*, employee:profiles(full_name)').order('created_at', { ascending: false }).limit(5),
+      ]);
+
+      const profiles = profilesData.data || [];
+      const payslips = payslipsData.data || [];
+
+      const activeEmployees = profiles.filter(p => p.is_active).length;
+      const deptCounts = profiles.reduce((acc, p) => {
+        const d = p.department || 'Unassigned';
+        acc[d] = (acc[d] || 0) + 1;
+        return acc;
+      }, {});
+
+      const payrollStats = {
+        totalDraft: payslips.filter(p => p.status === 'draft').length,
+        totalPaid: payslips.filter(p => p.status === 'paid').length,
+        monthlyPayroll: payslips.filter(p => p.status === 'paid').reduce((s, p) => s + parseFloat(p.net_salary || 0), 0),
+      };
+
+      return res.json({
+        stats: {
+          activeEmployees,
+          departments: Object.keys(deptCounts).length,
+          deptCounts,
+          payrollStats,
+        },
+        recentPayslips: recentPayslipsData.data || [],
+      });
+    }
+
     // Member dashboard
     if (role === 'member') {
       const [tasksData, myProjects, recentPayslips] = await Promise.all([

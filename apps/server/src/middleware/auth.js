@@ -49,6 +49,7 @@ const authorize = (...roles) => {
 const isAdmin          = authorize('admin');
 const isManagerOrAdmin = authorize('admin', 'manager');
 const isFinanceOrAdmin = authorize('admin', 'finance');
+const isHrOrAdmin      = authorize('admin', 'hr');
 const isTeamMember     = authorize('admin', 'manager', 'finance', 'member');
 
 // Finance can read invoices/payments; manager can see payment status
@@ -56,7 +57,7 @@ const canViewFinance   = authorize('admin', 'manager', 'finance');
 const canManageFinance = authorize('admin', 'finance');
 
 // Payslip access: admin full, finance create/send, member own-only (handled in route)
-const canViewPayslips  = authorize('admin', 'finance', 'member');
+const canViewPayslips  = authorize('admin', 'finance', 'hr', 'member');
 
 module.exports = {
   authenticate,
@@ -64,6 +65,7 @@ module.exports = {
   isAdmin,
   isManagerOrAdmin,
   isFinanceOrAdmin,
+  isHrOrAdmin,
   isTeamMember,
   canViewFinance,
   canManageFinance,

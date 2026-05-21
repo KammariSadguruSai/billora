@@ -26,6 +26,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email, password, and name are required' });
     }
 
+    if (role === 'client' && !phone) {
+      return res.status(400).json({ error: 'WhatsApp phone number is mandatory for clients' });
+    }
+
     // Create Supabase auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
@@ -193,6 +197,8 @@ router.post('/refresh', async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.APP_URL}/auth/reset-password`,
     });
@@ -200,6 +206,40 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ message: 'Password reset email sent' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to send reset email' });
+  }
+});
+
+// POST /api/auth/reset-password
+// Called with the access_token from the Supabase recovery email link
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { access_token, password } = req.body;
+    if (!access_token || !password) {
+      return res.status(400).json({ error: 'Access token and new password are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    // Verify the access token and get the user
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(access_token);
+    if (userError || !userData?.user) {
+      return res.status(401).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Update the user's password via admin API
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      userData.user.id,
+      { password }
+    );
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 

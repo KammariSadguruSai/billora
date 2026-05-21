@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
   avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'manager', 'finance', 'member', 'client')),
+  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'manager', 'finance', 'member', 'client', 'hr')),
   phone TEXT,
   company TEXT,
   timezone TEXT DEFAULT 'Asia/Kolkata',

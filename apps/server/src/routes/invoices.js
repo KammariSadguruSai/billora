@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
-const { authenticate, isManagerOrAdmin } = require('../middleware/auth');
+const { authenticate, isFinanceOrAdmin } = require('../middleware/auth');
 const { emitToUser } = require('../socket');
 const nodemailer = require('nodemailer');
 
@@ -89,7 +89,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/invoices
-router.post('/', authenticate, isManagerOrAdmin, async (req, res) => {
+router.post('/', authenticate, isFinanceOrAdmin, async (req, res) => {
   try {
     const {
       client_id, project_id, milestone_id, issue_date, due_date, currency,
@@ -171,7 +171,7 @@ router.post('/', authenticate, isManagerOrAdmin, async (req, res) => {
 });
 
 // PATCH /api/invoices/:id
-router.patch('/:id', authenticate, isManagerOrAdmin, async (req, res) => {
+router.patch('/:id', authenticate, isFinanceOrAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('invoices')
@@ -188,7 +188,7 @@ router.patch('/:id', authenticate, isManagerOrAdmin, async (req, res) => {
 });
 
 // POST /api/invoices/:id/send
-router.post('/:id/send', authenticate, isManagerOrAdmin, async (req, res) => {
+router.post('/:id/send', authenticate, isFinanceOrAdmin, async (req, res) => {
   try {
     const { data: invoice } = await supabase
       .from('invoices')
@@ -224,7 +224,7 @@ router.post('/:id/send', authenticate, isManagerOrAdmin, async (req, res) => {
 });
 
 // DELETE /api/invoices/:id
-router.delete('/:id', authenticate, isManagerOrAdmin, async (req, res) => {
+router.delete('/:id', authenticate, isFinanceOrAdmin, async (req, res) => {
   try {
     const { error } = await supabase.from('invoices').delete().eq('id', req.params.id);
     if (error) throw error;

@@ -6,7 +6,7 @@ interface User {
   id: string
   email: string
   full_name: string
-  role: 'admin' | 'manager' | 'member' | 'client'
+  role: 'admin' | 'manager' | 'member' | 'client' | 'finance' | 'hr'
   avatar_url?: string
   phone?: string
   company?: string
@@ -23,6 +23,8 @@ interface AuthState {
   logout: () => void
   setUser: (user: User) => void
   setToken: (token: string) => void
+  updateProfile: (data: any) => Promise<void>
+  updateUserProfile: (data: any) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -58,6 +60,27 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      updateProfile: async (data: any) => {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${get().token}`,
+            },
+            body: JSON.stringify(data),
+          })
+          if (!res.ok) {
+            const err = await res.json()
+            throw err
+          }
+          const updatedUser = await res.json()
+          set({ user: updatedUser })
+        } catch (err) {
+          throw err
+        }
+      },
+
       logout: () => {
         localStorage.removeItem('pm_token')
         localStorage.removeItem('pm-auth')
@@ -69,6 +92,11 @@ export const useAuthStore = create<AuthState>()(
       setToken: (token: string) => {
         localStorage.setItem('pm_token', token)
         set({ token })
+      },
+
+      // Alias so layout.tsx destructure works with either name
+      updateUserProfile: async (data: any) => {
+        return get().updateProfile(data)
       },
     }),
     {
