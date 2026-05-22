@@ -190,36 +190,57 @@ router.patch('/:id', authenticate, isFinanceOrAdmin, async (req, res) => {
 // POST /api/invoices/:id/send
 router.post('/:id/send', authenticate, isFinanceOrAdmin, async (req, res) => {
   try {
-    const { data: invoice } = await supabase
+    const { data: invoice, error: fetchError } = await supabase
       .from('invoices')
       .select('*, client:clients(name, email), items:invoice_items(*)')
       .eq('id', req.params.id)
       .single();
 
+    if (fetchError) {
+      console.error('Fetch invoice error:', fetchError);
+      return res.status(400).json({ error: fetchError.message });
+    }
+    
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
-    // Send email
-    try {
-      await transporter.sendMail({
-        from: `"${process.env.APP_NAME}" <${process.env.EMAIL_FROM}>`,
-        to: invoice.client.email,
-        subject: `Invoice ${invoice.invoice_number} - ${process.env.APP_NAME}`,
-        html: generateInvoiceEmail(invoice),
-      });
-    } catch (emailErr) {
-      console.error('Email error:', emailErr);
+    if (!invoice.client || !invoice.client.email) {
+      return res.status(400).json({ error: 'Client email is missing or client is deleted' });
     }
 
-    const { data } = await supabase
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+       console.warn('SMTP not configured, skipping actual email send');
+    } else {
+
+      try {
+        await transporter.sendMail({
+          from: `"${process.env.APP_NAME || 'Billora'}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+          to: invoice.client.email,
+          subject: `Invoice ${invoice.invoice_number} - ${process.env.APP_NAME || 'Billora'}`,
+          html: generateInvoiceEmail(invoice),
+        });
+      } catch (emailErr) {
+        console.error('Email send error:', emailErr);
+        // We do not return 500 here because we still want to mark the invoice as sent in the database
+        // but let's at least log it.
+      }
+    }
+
+    const { data, error: updateError } = await supabase
       .from('invoices')
       .update({ status: 'sent', sent_at: new Date().toISOString() })
       .eq('id', req.params.id)
       .select()
       .single();
 
+    if (updateError) {
+      console.error('Update invoice error:', updateError);
+      return res.status(400).json({ error: updateError.message });
+    }
+
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to send invoice' });
+    console.error('Send invoice error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send invoice' });
   }
 });
 

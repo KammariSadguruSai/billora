@@ -159,6 +159,7 @@ export const hrApi = {
   updateStatus: (id: string, is_active: boolean) =>
     api.patch(`/hr/employees/${id}/status`, { is_active }),
   getDepartments: () => api.get('/hr/departments'),
+  deleteEmployee: (id: string) => api.delete(`/hr/employees/${id}`),
 }
 
 // ─── Payslips ─────────────────────────────────────────────────────────────────

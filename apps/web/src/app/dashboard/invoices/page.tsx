@@ -254,7 +254,7 @@ export default function InvoicesPage() {
   const sendMutation = useMutation({
     mutationFn: (id: string) => invoicesApi.send(id) as any,
     onSuccess: () => { toast.success('Invoice sent!'); qc.invalidateQueries({ queryKey: ['invoices'] }) },
-    onError: () => toast.error('Failed to send invoice'),
+    onError: (err: any) => toast.error(err?.response?.data?.error || err?.message || 'Failed to send invoice'),
   })
 
   const deleteMutation = useMutation({

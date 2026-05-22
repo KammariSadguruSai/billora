@@ -1,15 +1,16 @@
 'use client'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { hrApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
-import { Users, Search, Shield, Crown, UserCheck, Briefcase, Plus } from 'lucide-react'
+import { Users, Search, Shield, Crown, UserCheck, Briefcase, Plus, Trash2 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 const ROLE_CONFIG: Record<string, { icon: any; color: string; badge: string }> = {
   admin:   { icon: Crown,     color: 'text-rose-600 dark:text-rose-400',    badge: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20 dark:border-transparent font-medium' },
@@ -22,6 +23,22 @@ export default function TeamPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => hrApi.deleteEmployee(id),
+    onSuccess: () => {
+      toast.success('Employee deleted successfully')
+      queryClient.invalidateQueries({ queryKey: ['team'] })
+    },
+    onError: () => toast.error('Failed to delete employee')
+  })
+
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      deleteMutation.mutate(id)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['team', search, roleFilter],
@@ -85,9 +102,21 @@ export default function TeamPage() {
                   <AvatarFallback className="bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 text-lg font-bold">{u.full_name?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{u.full_name}</p>
-                    <cfg.icon className={`w-3.5 h-3.5 flex-shrink-0 ${cfg.color}`} />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{u.full_name}</p>
+                      <cfg.icon className={`w-3.5 h-3.5 flex-shrink-0 ${cfg.color}`} />
+                    </div>
+                    {user?.role === 'admin' && u.id !== user?.id && (
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleDelete(u.id, u.full_name); }}
+                        disabled={deleteMutation.isPending}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        title="Delete Employee"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-xs text-slate-550 dark:text-gray-400 truncate mt-0.5">{u.email}</p>
                   

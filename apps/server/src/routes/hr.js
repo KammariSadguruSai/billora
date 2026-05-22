@@ -98,7 +98,7 @@ router.post('/employees', authenticate, isAdmin, async (req, res) => {
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      return res.status(500).json({ error: 'Failed to create employee profile' });
+      return res.status(400).json({ error: profileError.message || 'Failed to create employee profile' });
     }
 
     // 3. Send welcome email (non-blocking — don't fail if email fails)
@@ -127,7 +127,7 @@ router.post('/employees', authenticate, isAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error('Create employee error:', err);
-    res.status(500).json({ error: 'Failed to create employee' });
+    res.status(500).json({ error: err.message || 'Failed to create employee' });
   }
 });
 
@@ -282,6 +282,26 @@ router.get('/departments', authenticate, isManagerOrAdmin, async (req, res) => {
     res.json({ departments: unique });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch departments' });
+  }
+});
+
+// ── DELETE /api/hr/employees/:id ───────────────────────────────────────────────
+// Admin deletes an employee
+router.delete('/employees/:id', authenticate, isAdmin, async (req, res) => {
+  try {
+    // Delete the Supabase auth user (cascades to profile if configured, but we delete auth user directly via admin API)
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(req.params.id);
+    if (authError) {
+      return res.status(400).json({ error: authError.message });
+    }
+    
+    // Explicitly delete profile as well just in case ON DELETE CASCADE is missing
+    await supabaseAdmin.from('profiles').delete().eq('id', req.params.id);
+
+    res.json({ message: 'Employee deleted successfully' });
+  } catch (err) {
+    console.error('Delete employee error:', err);
+    res.status(500).json({ error: 'Failed to delete employee' });
   }
 });
 

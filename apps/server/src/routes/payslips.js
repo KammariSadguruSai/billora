@@ -73,7 +73,7 @@ router.post('/', authenticate, canManageFinance, async (req, res) => {
     res.status(201).json({ message: 'Payslip created', payslip: data });
   } catch (err) {
     console.error('Create payslip error:', err);
-    res.status(500).json({ error: 'Failed to create payslip' });
+    res.status(500).json({ error: err.message || 'Failed to create payslip' });
   }
 });
 

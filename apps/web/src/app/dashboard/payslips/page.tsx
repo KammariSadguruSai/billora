@@ -18,6 +18,23 @@ import { toast } from 'sonner'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTH_OPTIONS = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
 
+// ─── Shared Input Field ────────────────────────────────────────────────────────
+const Field = ({ label, name, placeholder, value, onChange }: { label: string; name: string; placeholder?: string, value: string, onChange: (val: string) => void }) => (
+  <div>
+    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">{label}</label>
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+      <input
+        type="number"
+        placeholder={placeholder || '0'}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all"
+      />
+    </div>
+  </div>
+)
+
 // ─── Create Payslip Dialog ────────────────────────────────────────────────────
 function CreatePayslipDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient()
@@ -70,21 +87,6 @@ function CreatePayslipDialog({ open, onClose }: { open: boolean; onClose: () => 
     createMutation.mutate({ ...form, net_salary: netSalary })
   }
 
-  const Field = ({ label, name, placeholder }: { label: string; name: string; placeholder?: string }) => (
-    <div>
-      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 block">{label}</label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
-        <input
-          type="number"
-          placeholder={placeholder || '0'}
-          value={(form as any)[name]}
-          onChange={e => setForm(f => ({ ...f, [name]: e.target.value }))}
-          className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all"
-        />
-      </div>
-    </div>
-  )
 
   if (!open) return null
 
@@ -156,10 +158,10 @@ function CreatePayslipDialog({ open, onClose }: { open: boolean; onClose: () => 
               <span className="w-1.5 h-4 bg-emerald-500 rounded-full" /> Earnings
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Basic Salary *" name="basic_salary" />
-              <Field label="HRA" name="hra" />
-              <Field label="Allowances" name="allowances" />
-              <Field label="Bonuses" name="bonuses" />
+              <Field label="Basic Salary *" name="basic_salary" value={form.basic_salary} onChange={v => setForm(f => ({ ...f, basic_salary: v }))} />
+              <Field label="HRA" name="hra" value={form.hra} onChange={v => setForm(f => ({ ...f, hra: v }))} />
+              <Field label="Allowances" name="allowances" value={form.allowances} onChange={v => setForm(f => ({ ...f, allowances: v }))} />
+              <Field label="Bonuses" name="bonuses" value={form.bonuses} onChange={v => setForm(f => ({ ...f, bonuses: v }))} />
             </div>
           </div>
 
@@ -169,9 +171,9 @@ function CreatePayslipDialog({ open, onClose }: { open: boolean; onClose: () => 
               <span className="w-1.5 h-4 bg-rose-500 rounded-full" /> Deductions
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Other Deductions" name="deductions" />
-              <Field label="PF Deduction" name="pf_deduction" />
-              <Field label="TDS" name="tds_deduction" />
+              <Field label="Other Deductions" name="deductions" value={form.deductions} onChange={v => setForm(f => ({ ...f, deductions: v }))} />
+              <Field label="PF Deduction" name="pf_deduction" value={form.pf_deduction} onChange={v => setForm(f => ({ ...f, pf_deduction: v }))} />
+              <Field label="TDS" name="tds_deduction" value={form.tds_deduction} onChange={v => setForm(f => ({ ...f, tds_deduction: v }))} />
             </div>
           </div>
 
