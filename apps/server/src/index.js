@@ -25,6 +25,7 @@ const hrRoutes = require('./routes/hr');
 const payslipRoutes = require('./routes/payslips');
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Render load balancer)
 const server = http.createServer(app);
 
 // Initialize Socket.IO
