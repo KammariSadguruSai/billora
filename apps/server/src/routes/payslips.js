@@ -84,7 +84,7 @@ router.get('/', authenticate, canViewPayslips, async (req, res) => {
     const { month, year, status, employee_id, page = 1, limit = 30 } = req.query;
     const isPrivileged = ['admin', 'finance'].includes(req.user.role);
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('payslips')
       .select(`
         id, month, year, basic_salary, hra, allowances, bonuses,
@@ -122,7 +122,7 @@ router.get('/', authenticate, canViewPayslips, async (req, res) => {
 // ── GET /api/payslips/:id ──────────────────────────────────────────────────────
 router.get('/:id', authenticate, canViewPayslips, async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('payslips')
       .select(`
         *,
@@ -151,7 +151,7 @@ router.get('/:id', authenticate, canViewPayslips, async (req, res) => {
 router.patch('/:id', authenticate, canManageFinance, async (req, res) => {
   try {
     // First verify it's in draft state
-    const { data: existing } = await supabase.from('payslips').select('status,created_by').eq('id', req.params.id).single();
+    const { data: existing } = await supabaseAdmin.from('payslips').select('status,created_by').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Payslip not found' });
     if (existing.status !== 'draft') {
       return res.status(400).json({ error: 'Only draft payslips can be edited' });
@@ -182,7 +182,7 @@ router.patch('/:id', authenticate, canManageFinance, async (req, res) => {
 // Finance or Admin approves a payslip (draft → approved)
 router.patch('/:id/approve', authenticate, canManageFinance, async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('payslips').select('status').eq('id', req.params.id).single();
+    const { data: existing } = await supabaseAdmin.from('payslips').select('status').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Payslip not found' });
     if (existing.status !== 'draft') {
       return res.status(400).json({ error: 'Only draft payslips can be approved' });
@@ -208,7 +208,7 @@ router.patch('/:id/mark-paid', authenticate, canManageFinance, async (req, res) 
   try {
     const { payment_method, transaction_id, payment_date } = req.body;
 
-    const { data: existing } = await supabase.from('payslips').select('status').eq('id', req.params.id).single();
+    const { data: existing } = await supabaseAdmin.from('payslips').select('status').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Payslip not found' });
     if (existing.status !== 'approved') {
       return res.status(400).json({ error: 'Only approved payslips can be marked as paid' });
@@ -237,7 +237,7 @@ router.patch('/:id/mark-paid', authenticate, canManageFinance, async (req, res) 
 // Admin or finance can delete a draft payslip
 router.delete('/:id', authenticate, canManageFinance, async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('payslips').select('status').eq('id', req.params.id).single();
+    const { data: existing } = await supabaseAdmin.from('payslips').select('status').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Payslip not found' });
     if (existing.status !== 'draft') {
       return res.status(400).json({ error: 'Only draft payslips can be deleted' });
