@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../lib/supabase');
-const { authenticate, isAdmin, isManagerOrAdmin } = require('../middleware/auth');
+const { authenticate, isAdmin, isManagerOrAdmin, isHrOrAdmin, authorize } = require('../middleware/auth');
 const { sendWelcomeEmail, isSmtpConfigured } = require('../lib/mailer');
 
 // Admin Supabase client (service role — can create auth users)
