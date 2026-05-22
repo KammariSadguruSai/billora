@@ -7,7 +7,9 @@ import api from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 import { toast } from 'sonner'
 
-export default function AuthCallbackPage() {
+import { Suspense } from 'react'
+
+function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setToken, setUser } = useAuthStore()
@@ -84,5 +86,17 @@ export default function AuthCallbackPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen gradient-hero flex items-center justify-center p-4 text-center">
+        <Loader2 className="w-12 h-12 text-indigo-400 mx-auto animate-spin" />
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   )
 }
