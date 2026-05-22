@@ -17,6 +17,7 @@ const ROLE_PREFIX = {
   admin:   'ADM',
   manager: 'MGR',
   finance: 'FIN',
+  hr:      'HR',
   member:  'EMP',
   client:  'CLT',
 };
@@ -44,7 +45,7 @@ async function generateEmployeeId(role) {
 
 // ── POST /api/hr/employees ─────────────────────────────────────────────────────
 // Admin creates a new internal employee (manager / finance / member)
-router.post('/employees', authenticate, isAdmin, async (req, res) => {
+router.post('/employees', authenticate, isHrOrAdmin, async (req, res) => {
   try {
     const {
       full_name, email, password,
@@ -57,7 +58,7 @@ router.post('/employees', authenticate, isAdmin, async (req, res) => {
       return res.status(400).json({ error: 'full_name, email, password and role are required' });
     }
 
-    const allowedRoles = ['manager', 'finance', 'member'];
+    const allowedRoles = ['manager', 'finance', 'hr', 'member'];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ error: `Role must be one of: ${allowedRoles.join(', ')}` });
     }
@@ -132,7 +133,7 @@ router.post('/employees', authenticate, isAdmin, async (req, res) => {
 });
 
 // ── GET /api/hr/employees ─────────────────────────────────────────────────────
-router.get('/employees', authenticate, isManagerOrAdmin, async (req, res) => {
+router.get('/employees', authenticate, authorize('admin', 'hr', 'manager'), async (req, res) => {
   try {
     const { role, department, search, page = 1, limit = 50, include_inactive = false } = req.query;
 
@@ -192,11 +193,11 @@ router.get('/employees/:id', authenticate, async (req, res) => {
 
 // ── PATCH /api/hr/employees/:id/role ──────────────────────────────────────────
 // Admin promotes / changes role or department
-router.patch('/employees/:id/role', authenticate, isAdmin, async (req, res) => {
+router.patch('/employees/:id/role', authenticate, isHrOrAdmin, async (req, res) => {
   try {
     const { role, department } = req.body;
 
-    const allowedRoles = ['manager', 'finance', 'member'];
+    const allowedRoles = ['manager', 'finance', 'hr', 'member'];
     if (role && !allowedRoles.includes(role)) {
       return res.status(400).json({ error: `Role must be one of: ${allowedRoles.join(', ')}` });
     }
@@ -226,7 +227,7 @@ router.patch('/employees/:id/role', authenticate, isAdmin, async (req, res) => {
 
 // ── PATCH /api/hr/employees/:id/salary ────────────────────────────────────────
 // Admin-only: set/update base salary
-router.patch('/employees/:id/salary', authenticate, isAdmin, async (req, res) => {
+router.patch('/employees/:id/salary', authenticate, isHrOrAdmin, async (req, res) => {
   try {
     const { salary } = req.body;
     if (salary === undefined || isNaN(parseFloat(salary))) {
@@ -249,7 +250,7 @@ router.patch('/employees/:id/salary', authenticate, isAdmin, async (req, res) =>
 
 // ── PATCH /api/hr/employees/:id/status ────────────────────────────────────────
 // Admin activates / deactivates an employee
-router.patch('/employees/:id/status', authenticate, isAdmin, async (req, res) => {
+router.patch('/employees/:id/status', authenticate, isHrOrAdmin, async (req, res) => {
   try {
     const { is_active } = req.body;
     const { data, error } = await supabaseAdmin
@@ -287,7 +288,7 @@ router.get('/departments', authenticate, isManagerOrAdmin, async (req, res) => {
 
 // ── DELETE /api/hr/employees/:id ───────────────────────────────────────────────
 // Admin deletes an employee
-router.delete('/employees/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/employees/:id', authenticate, isHrOrAdmin, async (req, res) => {
   try {
     // Delete the Supabase auth user (cascades to profile if configured, but we delete auth user directly via admin API)
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(req.params.id);

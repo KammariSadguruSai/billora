@@ -58,7 +58,7 @@ export default function TeamPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Team</h1>
           <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">{data?.total || 0} active employees</p>
         </div>
-        {user?.role === 'admin' && (
+        {['admin', 'hr'].includes(user?.role || '') && (
           <Link href="/dashboard/team/create"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.25)' }}
@@ -107,7 +107,7 @@ export default function TeamPage() {
                       <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{u.full_name}</p>
                       <cfg.icon className={`w-3.5 h-3.5 flex-shrink-0 ${cfg.color}`} />
                     </div>
-                    {user?.role === 'admin' && u.id !== user?.id && (
+                    {['admin', 'hr'].includes(user?.role || '') && u.id !== user?.id && (
                       <button 
                         onClick={(e) => { e.preventDefault(); handleDelete(u.id, u.full_name); }}
                         disabled={deleteMutation.isPending}

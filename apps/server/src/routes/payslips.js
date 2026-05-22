@@ -179,8 +179,8 @@ router.patch('/:id', authenticate, canManageFinance, async (req, res) => {
 });
 
 // ── PATCH /api/payslips/:id/approve ───────────────────────────────────────────
-// Admin only approves a payslip (draft → approved)
-router.patch('/:id/approve', authenticate, isAdmin, async (req, res) => {
+// Finance or Admin approves a payslip (draft → approved)
+router.patch('/:id/approve', authenticate, canManageFinance, async (req, res) => {
   try {
     const { data: existing } = await supabase.from('payslips').select('status').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Payslip not found' });

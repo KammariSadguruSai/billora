@@ -398,7 +398,7 @@ export default function PayslipsPage() {
                   {/* Action Buttons */}
                   {isFinanceOrAdmin && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isAdmin && p.status === 'draft' && (
+                      {isFinanceOrAdmin && p.status === 'draft' && (
                         <button
                           onClick={() => approveMutation.mutate(p.id)}
                           disabled={approveMutation.isPending}
