@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../lib/supabase');
+const { sendPayslipEmail } = require('../lib/mailer');
 const {
   authenticate, isAdmin, canManageFinance, canViewPayslips,
 } = require('../middleware/auth');
@@ -192,10 +193,23 @@ router.patch('/:id/approve', authenticate, canManageFinance, async (req, res) =>
       .from('payslips')
       .update({ status: 'approved', approved_by: req.user.id })
       .eq('id', req.params.id)
-      .select(`*, employee:profiles!employee_id(full_name, employee_id)`)
+      .select(`*, employee:profiles!employee_id(full_name, employee_id, email)`)
       .single();
 
     if (error) throw error;
+    
+    // Send email notification asynchronously
+    if (data && data.employee && data.employee.email) {
+      sendPayslipEmail(data.employee.email, {
+        name: data.employee.full_name,
+        month: data.month,
+        year: data.year,
+        netSalary: data.net_salary,
+        status: 'approved',
+        appUrl: process.env.APP_URL
+      }).catch(e => console.error('Payslip email error:', e));
+    }
+
     res.json({ message: 'Payslip approved', payslip: data });
   } catch (err) {
     res.status(500).json({ error: 'Failed to approve payslip' });
@@ -223,10 +237,23 @@ router.patch('/:id/mark-paid', authenticate, canManageFinance, async (req, res) 
         payment_date: payment_date || new Date().toISOString().split('T')[0],
       })
       .eq('id', req.params.id)
-      .select(`*, employee:profiles!employee_id(full_name, employee_id)`)
+      .select(`*, employee:profiles!employee_id(full_name, employee_id, email)`)
       .single();
 
     if (error) throw error;
+
+    // Send email notification asynchronously
+    if (data && data.employee && data.employee.email) {
+      sendPayslipEmail(data.employee.email, {
+        name: data.employee.full_name,
+        month: data.month,
+        year: data.year,
+        netSalary: data.net_salary,
+        status: 'paid',
+        appUrl: process.env.APP_URL
+      }).catch(e => console.error('Payslip email error:', e));
+    }
+
     res.json({ message: 'Payslip marked as paid', payslip: data });
   } catch (err) {
     res.status(500).json({ error: 'Failed to mark payslip as paid' });

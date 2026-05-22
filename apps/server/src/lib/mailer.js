@@ -126,4 +126,67 @@ async function sendWelcomeEmail(to, { name, employeeId, email, password, role, d
   return { sent: true, messageId: info.messageId };
 }
 
-module.exports = { sendWelcomeEmail, isSmtpConfigured };
+/**
+ * Send email when payslip is approved or paid
+ */
+async function sendPayslipEmail(to, { name, month, year, netSalary, status, appUrl }) {
+  if (!isSmtpConfigured()) {
+    console.warn('[Mailer] SMTP not configured — skipping payslip email to', to);
+    return { skipped: true, reason: 'SMTP not configured' };
+  }
+
+  const transport = createTransport();
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = monthNames[month - 1];
+  
+  let subject = '';
+  let title = '';
+  let message = '';
+  
+  if (status === 'approved') {
+    subject = `Your payslip for ${monthName} ${year} has been approved`;
+    title = 'Payslip Approved';
+    message = `Your payslip for ${monthName} ${year} has been successfully reviewed and approved by Finance. The net salary is ₹${netSalary}.`;
+  } else if (status === 'paid') {
+    subject = `Payment Processed: Payslip for ${monthName} ${year}`;
+    title = 'Salary Processed';
+    message = `Good news! Your salary for ${monthName} ${year} (₹${netSalary}) has been processed and paid.`;
+  }
+
+  const loginUrl = `${appUrl || process.env.APP_URL || 'http://localhost:3000'}/dashboard/payslips`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: sans-serif; background: #f4f4f5; padding: 20px; }
+  .box { background: white; padding: 30px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  h2 { color: #4f46e5; margin-top: 0; }
+  .btn { display: inline-block; background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>${title}</h2>
+  <p>Hi ${name},</p>
+  <p>${message}</p>
+  <p>You can view and download your full payslip from the dashboard.</p>
+  <a class="btn" href="${loginUrl}">View Payslip</a>
+</div>
+</body>
+</html>
+  `.trim();
+
+  const info = await transport.sendMail({
+    from: `"Billora HR" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+
+  console.log('[Mailer] Payslip email sent to', to, '— messageId:', info.messageId);
+  return { sent: true, messageId: info.messageId };
+}
+
+module.exports = { sendWelcomeEmail, sendPayslipEmail, isSmtpConfigured };
