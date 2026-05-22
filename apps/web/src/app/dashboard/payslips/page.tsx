@@ -118,7 +118,15 @@ function CreatePayslipDialog({ open, onClose }: { open: boolean; onClose: () => 
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <select
                   value={form.employee_id}
-                  onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))}
+                  onChange={e => {
+                    const empId = e.target.value
+                    const emp = members.find((m: any) => m.id === empId)
+                    setForm(f => ({ 
+                      ...f, 
+                      employee_id: empId,
+                      basic_salary: emp?.salary ? emp.salary.toString() : ''
+                    }))
+                  }}
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all appearance-none"
                 >
                   <option value="">Select an employee...</option>
