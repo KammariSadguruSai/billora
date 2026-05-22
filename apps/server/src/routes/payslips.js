@@ -60,7 +60,7 @@ router.post('/', authenticate, canManageFinance, async (req, res) => {
         status: 'draft',
         created_by: req.user.id,
       })
-      .select(`*, employee:profiles(id,full_name,employee_id,department,role)`)
+      .select(`*, employee:profiles!employee_id(id,full_name,employee_id,department,role)`)
       .single();
 
     if (error) {
